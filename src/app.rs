@@ -1,12 +1,12 @@
+use crate::pages::forum::{ForumPage, ForumPageProps};
+use crate::pages::home::{Home, HomeProps};
 use leptos::*;
-use leptos::{For, ForProps, *};
 use leptos_meta::*;
 use leptos_router::*;
 
 #[component]
 pub fn App(cx: Scope) -> impl IntoView {
     provide_meta_context(cx);
-
     view! {
         cx,
         <Stylesheet id="leptos" href="/pkg/rustbb.css"/>
@@ -18,6 +18,7 @@ pub fn App(cx: Scope) -> impl IntoView {
                 <Layout>
                     <Routes>
                         <Route path="" view=  move |cx| view! { cx, <Home/> }/>
+                        <Route path="/forum/:id" view=  move |cx| view! { cx, <ForumPage/> }/>
                     </Routes>
                     <RightSidebar/>
                 </Layout>
@@ -90,144 +91,6 @@ fn Layout(cx: Scope, children: Children) -> impl IntoView {
     }
 }
 
-#[derive(Clone)]
-struct Category {
-    pub id: i64,
-    pub name: String,
-    pub description: String,
-    pub creator_id: String,
-}
-
-#[derive(Clone)]
-struct Forum {
-    pub id: i64,
-    pub name: String,
-    pub description: String,
-    pub slug: String,
-    pub category_id: i64,
-}
-
-#[component]
-fn CategoryCard(cx: Scope, category: Category, forums: Vec<Forum>) -> impl IntoView {
-    view! {cx,
-        <div class="bg-neutral-800 rounded-lg shadow-lg p-4 mb-3">
-            <h2 class="text-2xl font-bold">{category.name}</h2>
-            <p class="text-sm text-text_secondary">{category.description}</p>
-            <div class="flex flex-col">
-                <For
-                    each=move || forums.clone()
-                    key=|n| n.id
-                    view = move |cx, forum| {
-                        view! {cx,
-                            <ForumCard forum={forum}/>
-                        }
-                    }
-                />
-            </div>
-        </div>
-    }
-}
-
-#[component]
-fn ForumCard(cx: Scope, forum: Forum) -> impl IntoView {
-    view! {cx,
-        <div class="bg-neutral-700 rounded-sm shadow-lg p-4 flex">
-            <div class="w-3/5">
-                <h2 class="text-xl font-bold">{forum.name}</h2>
-                <p class="text-sm text-text_secondary">{forum.description}</p>
-            </div>
-            <div class="flex">
-                <div class="flex flex-col items-center">
-                    <p>"Threads"</p>
-                    <p>"1"</p>
-                </div>
-                <div class="flex flex-col items-center ml-6">
-                    <p>"Messages"</p>
-                    <p>"1"</p>
-                </div>
-            </div>
-        </div>
-    }
-}
-
-fn get_home_data() -> Vec<(Category, Vec<Forum>)> {
-    let mock_categories = vec![
-        Category {
-            id: 1,
-            name: "General".to_string(),
-            description: "General discussion about the forum".to_string(),
-            creator_id: "1".to_string(),
-        },
-        Category {
-            id: 2,
-            name: "Most popular".to_string(),
-            description: "Most popular stuff".to_string(),
-            creator_id: "1".to_string(),
-        },
-        Category {
-            id: 3,
-            name: "Off-Topic".to_string(),
-            description: "Off-Topic discussion about the forum".to_string(),
-            creator_id: "1".to_string(),
-        },
-    ];
-
-    mock_categories
-        .into_iter()
-        .map(|c| {
-            let mock_node = Forum {
-                id: 1,
-                name: "This is a forum title".to_string(),
-                category_id: c.id,
-                description: "This is a forum description".to_string(),
-                slug: "this-is-a-category-node".to_string(),
-            };
-            let mock_node_2 = Forum {
-                id: 2,
-                name: "This is a forum title2".to_string(),
-                category_id: c.id,
-                description: "This is a forum 2".to_string(),
-                slug: "this-is-a-category-node-2".to_string(),
-            };
-            (c, vec![mock_node, mock_node_2])
-        })
-        .collect()
-}
-
-#[component]
-fn Home(cx: Scope) -> impl IntoView {
-    let (count, set_count) = create_signal(cx, 0);
-
-    let home_page_data = get_home_data();
-    view! { cx,
-        <div class="h-full w-full">
-            <For
-                each=move || home_page_data.clone()
-                key=|(c, _)| c.id
-                view = move |cx, (category, forums)| {
-                    view! {cx,
-                        <CategoryCard category={category} forums={forums}/>
-                    }
-                }
-            />
-            // <h2 class="p-6 text-4xl text-green-400">"Welcome to Leptos with Tailwind"</h2>
-            // <p class="px-10 pb-10 text-left">"Tailwind will scan your Rust files for Tailwind class names and compile them into a CSS file."</p>
-            // <button
-            //     class="bg-amber-600 hover:bg-sky-700 px-5 py-3 text-white rounded-lg"
-            //     on:click=move |_| set_count.update(|count| *count += 1)
-            // >
-            //     "Something's here | "
-            //     {move || if count() == 0 {
-            //         "Click me!".to_string()
-            //     } else {
-            //         count().to_string()
-            //     }}
-            //     " | Some more text"
-            // </button>
-        </div>
-    }
-}
-
 #[component]
 pub fn Footer(cx: Scope) -> impl IntoView {
     view! {cx,
@@ -245,6 +108,16 @@ pub fn Header(cx: Scope) -> impl IntoView {
 #[component]
 pub fn Navbar(cx: Scope) -> impl IntoView {
     view! {cx,
-        <nav id="navbar" class="bg-bg_primary">"Hello from the navbar"</nav>
+        <nav id="navbar" class="bg-bg_primary">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <a href="/" class="text-2xl font-bold text-text_primary">"Leptos"</a>
+                </div>
+                <div class="flex items-center">
+                    <a href="/login" class="text-lg font-bold text-text_primary">"Login"</a>
+                    <a href="/register" class="text-lg font-bold text-text_primary ml-4">"Register"</a>
+                </div>
+            </div>
+        </nav>
     }
 }

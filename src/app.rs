@@ -32,16 +32,44 @@ pub fn RightSidebar(cx: Scope) -> impl IntoView {
     view! {cx,
         <div class="flex flex-col w-64 ml-3">
             <Card title="Members online">
-                <p class="text-sm text-text_secondary">"No members are currently online"</p>
+                <p class="text-sm">"No members are currently online"</p>
             </Card>
+            <ForumStatisticsCard/>
         </div>
     }
 }
 
 #[component]
-pub fn Card(cx: Scope, title: &'static str, children: Children) -> impl IntoView {
+pub fn ForumStatisticsCard(cx: Scope) -> impl IntoView {
     view! {cx,
-        <div class="bg-neutral-800 rounded-lg shadow-lg p-4">
+        <Card title="Forum statistics" class="mt-3">
+            <div class="flex flex-col">
+                <div class="flex justify-between">
+                    <p>"Threads:"</p>
+                    <p>"1"</p>
+                </div>
+                <div class="flex justify-between">
+                    <p>"Messages:"</p>
+                    <p>"1"</p>
+                </div>
+                <div class="flex justify-between">
+                    <p>"Members:"</p>
+                    <p>"1"</p>
+                </div>
+            </div>
+        </Card>
+    }
+}
+
+#[component]
+pub fn Card(
+    cx: Scope,
+    title: &'static str,
+    #[prop(optional)] class: &'static str,
+    children: Children,
+) -> impl IntoView {
+    view! {cx,
+        <div class=format!("bg-neutral-800 rounded-md shadow-lg p-3 {class}")>
             <h2 class="text-2xl font-bold">{title}</h2>
             <div class="flex flex-col">
                 {children(cx)}
@@ -67,34 +95,31 @@ struct Category {
     pub id: i64,
     pub name: String,
     pub description: String,
-    pub forum_id: String,
     pub creator_id: String,
 }
 
 #[derive(Clone)]
-struct CategoryNode {
+struct Forum {
     pub id: i64,
     pub name: String,
     pub description: String,
+    pub slug: String,
     pub category_id: i64,
 }
 
 #[component]
-fn CategoryCard(cx: Scope, category: Category, nodes: Vec<CategoryNode>) -> impl IntoView {
+fn CategoryCard(cx: Scope, category: Category, forums: Vec<Forum>) -> impl IntoView {
     view! {cx,
         <div class="bg-neutral-800 rounded-lg shadow-lg p-4 mb-3">
             <h2 class="text-2xl font-bold">{category.name}</h2>
             <p class="text-sm text-text_secondary">{category.description}</p>
             <div class="flex flex-col">
                 <For
-                    each=move || nodes.clone()
+                    each=move || forums.clone()
                     key=|n| n.id
-                    view = move |cx, node| {
+                    view = move |cx, forum| {
                         view! {cx,
-                            <div class="bg-neutral-700 rounded-sm shadow-lg p-4">
-                                <h2 class="text-2xl font-bold">{node.name}</h2>
-                                <p class="text-sm text-text_secondary">{node.description}</p>
-                            </div>
+                            <ForumCard forum={forum}/>
                         }
                     }
                 />
@@ -103,26 +128,45 @@ fn CategoryCard(cx: Scope, category: Category, nodes: Vec<CategoryNode>) -> impl
     }
 }
 
-fn get_home_data() -> Vec<(Category, Vec<CategoryNode>)> {
+#[component]
+fn ForumCard(cx: Scope, forum: Forum) -> impl IntoView {
+    view! {cx,
+        <div class="bg-neutral-700 rounded-sm shadow-lg p-4 flex">
+            <div class="w-3/5">
+                <h2 class="text-xl font-bold">{forum.name}</h2>
+                <p class="text-sm text-text_secondary">{forum.description}</p>
+            </div>
+            <div class="flex">
+                <div class="flex flex-col items-center">
+                    <p>"Threads"</p>
+                    <p>"1"</p>
+                </div>
+                <div class="flex flex-col items-center ml-6">
+                    <p>"Messages"</p>
+                    <p>"1"</p>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+fn get_home_data() -> Vec<(Category, Vec<Forum>)> {
     let mock_categories = vec![
         Category {
             id: 1,
             name: "General".to_string(),
-            forum_id: "1".to_string(),
             description: "General discussion about the forum".to_string(),
             creator_id: "1".to_string(),
         },
         Category {
             id: 2,
             name: "Most popular".to_string(),
-            forum_id: "1".to_string(),
             description: "Most popular stuff".to_string(),
             creator_id: "1".to_string(),
         },
         Category {
             id: 3,
             name: "Off-Topic".to_string(),
-            forum_id: "1".to_string(),
             description: "Off-Topic discussion about the forum".to_string(),
             creator_id: "1".to_string(),
         },
@@ -131,13 +175,21 @@ fn get_home_data() -> Vec<(Category, Vec<CategoryNode>)> {
     mock_categories
         .into_iter()
         .map(|c| {
-            let mock_node = CategoryNode {
+            let mock_node = Forum {
                 id: 1,
-                name: "Random tutorials".to_string(),
+                name: "This is a forum title".to_string(),
                 category_id: c.id,
-                description: "Random tutorials".to_string(),
+                description: "This is a forum description".to_string(),
+                slug: "this-is-a-category-node".to_string(),
             };
-            (c, vec![mock_node])
+            let mock_node_2 = Forum {
+                id: 2,
+                name: "This is a forum title2".to_string(),
+                category_id: c.id,
+                description: "This is a forum 2".to_string(),
+                slug: "this-is-a-category-node-2".to_string(),
+            };
+            (c, vec![mock_node, mock_node_2])
         })
         .collect()
 }
@@ -152,9 +204,9 @@ fn Home(cx: Scope) -> impl IntoView {
             <For
                 each=move || home_page_data.clone()
                 key=|(c, _)| c.id
-                view = move |cx, (category, nodes)| {
+                view = move |cx, (category, forums)| {
                     view! {cx,
-                        <CategoryCard category={category} nodes={nodes}/>
+                        <CategoryCard category={category} forums={forums}/>
                     }
                 }
             />

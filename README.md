@@ -1,0 +1,1 @@
+This is a proof-of-concept forum made purely with rust (backend and frontend).

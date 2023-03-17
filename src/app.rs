@@ -32,16 +32,44 @@ pub fn RightSidebar(cx: Scope) -> impl IntoView {
     view! {cx,
         <div class="flex flex-col w-64 ml-3">
             <Card title="Members online">
-                <p class="text-sm text-text_secondary">"No members are currently online"</p>
+                <p class="text-sm">"No members are currently online"</p>
             </Card>
+            <ForumStatisticsCard/>
         </div>
     }
 }
 
 #[component]
-pub fn Card(cx: Scope, title: &'static str, children: Children) -> impl IntoView {
+pub fn ForumStatisticsCard(cx: Scope) -> impl IntoView {
     view! {cx,
-        <div class="bg-neutral-800 rounded-lg shadow-lg p-4">
+        <Card title="Forum statistics" class="mt-3">
+            <div class="flex flex-col">
+                <div class="flex justify-between">
+                    <p>"Threads:"</p>
+                    <p>"1"</p>
+                </div>
+                <div class="flex justify-between">
+                    <p>"Messages:"</p>
+                    <p>"1"</p>
+                </div>
+                <div class="flex justify-between">
+                    <p>"Members:"</p>
+                    <p>"1"</p>
+                </div>
+            </div>
+        </Card>
+    }
+}
+
+#[component]
+pub fn Card(
+    cx: Scope,
+    title: &'static str,
+    #[prop(optional)] class: &'static str,
+    children: Children,
+) -> impl IntoView {
+    view! {cx,
+        <div class=format!("bg-neutral-800 rounded-md shadow-lg p-3 {class}")>
             <h2 class="text-2xl font-bold">{title}</h2>
             <div class="flex flex-col">
                 {children(cx)}
@@ -76,6 +104,7 @@ struct CategoryNode {
     pub id: i64,
     pub name: String,
     pub description: String,
+    pub slug: String,
     pub category_id: i64,
 }
 
@@ -91,13 +120,32 @@ fn CategoryCard(cx: Scope, category: Category, nodes: Vec<CategoryNode>) -> impl
                     key=|n| n.id
                     view = move |cx, node| {
                         view! {cx,
-                            <div class="bg-neutral-700 rounded-sm shadow-lg p-4">
-                                <h2 class="text-2xl font-bold">{node.name}</h2>
-                                <p class="text-sm text-text_secondary">{node.description}</p>
-                            </div>
+                            <CategoryNode node={node}/>
                         }
                     }
                 />
+            </div>
+        </div>
+    }
+}
+
+#[component]
+fn CategoryNode(cx: Scope, node: CategoryNode) -> impl IntoView {
+    view! {cx,
+        <div class="bg-neutral-700 rounded-sm shadow-lg p-4 flex">
+            <div class="w-3/5">
+                <h2 class="text-xl font-bold">{node.name}</h2>
+                <p class="text-sm text-text_secondary">{node.description}</p>
+            </div>
+            <div class="flex">
+                <div class="flex flex-col items-center">
+                    <p>"Threads"</p>
+                    <p>"1"</p>
+                </div>
+                <div class="flex flex-col items-center ml-6">
+                    <p>"Messages"</p>
+                    <p>"1"</p>
+                </div>
             </div>
         </div>
     }
@@ -133,11 +181,19 @@ fn get_home_data() -> Vec<(Category, Vec<CategoryNode>)> {
         .map(|c| {
             let mock_node = CategoryNode {
                 id: 1,
-                name: "Random tutorials".to_string(),
+                name: "This is a category node title".to_string(),
                 category_id: c.id,
-                description: "Random tutorials".to_string(),
+                description: "This is a category node description".to_string(),
+                slug: "this-is-a-category-node".to_string(),
             };
-            (c, vec![mock_node])
+            let mock_node_2 = CategoryNode {
+                id: 2,
+                name: "This is a category node title2".to_string(),
+                category_id: c.id,
+                description: "This is a category node 2".to_string(),
+                slug: "this-is-a-category-node-2".to_string(),
+            };
+            (c, vec![mock_node, mock_node_2])
         })
         .collect()
 }

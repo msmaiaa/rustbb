@@ -33,38 +33,16 @@ simple_logger = { version = "4.0", optional = true }
 rbatis = { version = "4.0.58", optional = true }
 rbs = { version = "0.1.15", optional = true }
 rbdc-pg = { version = "0.1.22", optional = true }
+dotenv = { version = "0.15.0", optional = true }
+tracing = { version = "0.1.37", optional = true}
+tracing-subscriber = { version = "0.3.16", optional = true}
+sqlx = { version = "0.6", features = [ "runtime-tokio-rustls", "postgres" ], optional = true }
 
 [features]
 default = ["hydrate"]
-hydrate = [
-  "leptos/hydrate",
-  "leptos_meta/hydrate",
-  "leptos_router/hydrate",
-  "dep:wasm-bindgen",
-  "dep:console_log",
-  "dep:console_error_panic_hook",
-]
-csr = [
-  "leptos/csr",
-  "leptos_meta/csr",
-  "leptos_router/csr",
-  "dep:wasm-bindgen",
-  "dep:console_log",
-  "dep:console_error_panic_hook",
-]
-ssr = [
-  "leptos/ssr",
-  "leptos_meta/ssr",
-  "leptos_router/ssr",
-  "dep:leptos_actix",
-  "dep:actix-web",
-  "dep:actix-files",
-  "dep:futures",
-  "dep:simple_logger",
-  "dep:rbatis",
-  "dep:rbs",
-  "dep:rbdc-pg",
-]
+hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate", "dep:wasm-bindgen", "dep:console_log", "dep:console_error_panic_hook"]
+csr = ["leptos/csr", "leptos_meta/csr", "leptos_router/csr", "dep:wasm-bindgen", "dep:console_log", "dep:console_error_panic_hook"]
+ssr = ["leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:leptos_actix", "dep:actix-web", "dep:actix-files", "dep:futures", "dep:simple_logger", "dep:rbatis", "dep:rbs", "dep:rbdc-pg", "dep:dotenv", "dep:tracing", "dep:tracing-subscriber", "dep:sqlx"]
 
 [package.metadata.cargo-all-features]
 denylist = [

@@ -10,14 +10,43 @@ cfg_if! {
         use leptos::*;
         use crate::app::*;
         use leptos_actix::{generate_route_list, LeptosRoutes};
+        use dotenv::dotenv;
 
         #[get("/style.css")]
         async fn css() -> impl Responder {
             actix_files::NamedFile::open_async("./style/output.css").await
         }
 
+        async fn migrate(database_url: &str) {
+            let db_pool = match sqlx::postgres::PgPoolOptions::new()
+            .connect(database_url)
+            .await {
+                Ok(pool) => pool,
+                Err(e) => {
+                    tracing::error!("[sqlx] Failed to connect to database: {}", e);
+                    return;
+                }
+            };
+
+            match sqlx::migrate!("./migrations")
+            .run(&db_pool)
+            .await {
+                Ok(_) => tracing::info!("[sqlx] Database migrations ran successfully"),
+                Err(e) => tracing::error!("[sqlx] Database migrations failed: {}", e),
+            };
+        }
+
         #[actix_web::main]
         async fn main() -> std::io::Result<()> {
+            dotenv().ok();
+            tracing_subscriber::fmt::init();
+
+            let rb = rbatis::Rbatis::new();
+            let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+            rb.init(rbdc_pg::driver::PgDriver {}, database_url.as_str()).expect("[Rbatis] Failed to initialize database connection");
+            tracing::info!("[Rbatis] Database connection initialized");
+
+            migrate(&database_url).await;
 
             // Setting this to None means we'll be using cargo-leptos and its env vars.
             let conf = get_configuration(None).await.unwrap();

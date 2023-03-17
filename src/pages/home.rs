@@ -1,3 +1,4 @@
+use crate::model::forum::*;
 use leptos::*;
 
 #[component]
@@ -24,15 +25,6 @@ struct Category {
     pub name: String,
     pub description: String,
     pub creator_id: String,
-}
-
-#[derive(Clone)]
-struct Forum {
-    pub id: i64,
-    pub title: String,
-    pub description: String,
-    pub slug: String,
-    pub category_id: i64,
 }
 
 #[component]

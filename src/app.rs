@@ -11,6 +11,7 @@ pub fn App(cx: Scope) -> impl IntoView {
         cx,
         <Stylesheet id="leptos" href="/pkg/rustbb.css"/>
         <Link rel="shortcut icon" type_="image/ico" href="/favicon.ico"/>
+        <Title text="rustbb"/>
         <Router>
             <div class="text-text_primary bg-bg_primary min-h-screen">
                 <Header/>

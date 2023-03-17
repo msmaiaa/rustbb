@@ -17,23 +17,39 @@ cfg_if! {
             actix_files::NamedFile::open_async("./style/output.css").await
         }
 
-        async fn migrate(database_url: &str) {
-            let db_pool = match sqlx::postgres::PgPoolOptions::new()
-            .connect(database_url)
-            .await {
-                Ok(pool) => pool,
-                Err(e) => {
-                    tracing::error!("[sqlx] Failed to connect to database: {}", e);
-                    return;
-                }
-            };
-
+        async fn migrate(db_pool: &sqlx::Pool<sqlx::Postgres>) {
             match sqlx::migrate!("./migrations")
-            .run(&db_pool)
+            .run(db_pool)
             .await {
                 Ok(_) => tracing::info!("[sqlx] Database migrations ran successfully"),
                 Err(e) => tracing::error!("[sqlx] Database migrations failed: {}", e),
             };
+        }
+
+        async fn get_db_pool(db_url: &str) -> Result<sqlx::Pool<sqlx::Postgres>, sqlx::error::Error> {
+            sqlx::postgres::PgPoolOptions::new()
+            .connect(db_url)
+            .await
+        }
+
+        async fn test(db_pool: &sqlx::Pool<sqlx::Postgres>) {
+            use model::main_forum::MainForum;
+            match MainForum::get_main_forum(db_pool).await {
+                Ok(_) => tracing::info!("The main forum is already set."),
+                Err(e) => {
+                    match e {
+                        sqlx::Error::RowNotFound => {
+                            tracing::info!("The main forum is not set. Creating it now.");
+                            if let Err(e) = MainForum::create(db_pool, "rustbb").await {
+                                tracing::error!("Couldn't create the main forum :( {}", e);
+                            }
+                        }
+                        _ => {
+                            tracing::error!("Error while getting the main forum: {}", e);
+                        }
+                    }
+                }
+            }
         }
 
         #[actix_web::main]
@@ -41,12 +57,11 @@ cfg_if! {
             dotenv().ok();
             tracing_subscriber::fmt::init();
 
-            let rb = rbatis::Rbatis::new();
             let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-            rb.init(rbdc_pg::driver::PgDriver {}, database_url.as_str()).expect("[Rbatis] Failed to initialize database connection");
-            tracing::info!("[Rbatis] Database connection initialized");
+            let db_pool = get_db_pool(&database_url).await.expect("Couldn't connect to the database");
+            migrate(&db_pool).await;
 
-            migrate(&database_url).await;
+            test(&db_pool).await;
 
             // Setting this to None means we'll be using cargo-leptos and its env vars.
             let conf = get_configuration(None).await.unwrap();

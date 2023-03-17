@@ -21,7 +21,7 @@ pub fn Home(cx: Scope) -> impl IntoView {
 
 #[derive(Clone)]
 struct Category {
-    pub id: i64,
+    pub id: i32,
     pub name: String,
     pub description: String,
     pub creator_id: String,

@@ -34,6 +34,7 @@ fn get_forum_page() -> (Forum, Vec<Thread>) {
         description: "mock forum description".to_string(),
         slug: "mock-forum".to_string(),
         category_id: 1,
+        created_at: chrono::NaiveDateTime::from_timestamp(0, 0),
     };
 
     let mock_threads = vec![
@@ -116,9 +117,9 @@ fn ThreadCard(cx: Scope, thread: Thread) -> impl IntoView {
     view! {cx,
         <div class="bg-neutral-700 rounded-sm shadow-lg p-4 flex w-full">
             <div class="w-3/5">
-                <a href=format!("/thread/{}.{}", thread.slug, thread.id)>
+                <A href=format!("/thread/{}.{}", thread.slug, thread.id)>
                     <h2 class="text-xl font-bold">{thread.title}</h2>
-                </a>
+                </A>
             </div>
         </div>
     }

@@ -13,7 +13,7 @@ pub fn App(cx: Scope) -> impl IntoView {
         <Link rel="shortcut icon" type_="image/ico" href="/favicon.ico"/>
         <Title text="rustbb"/>
         <Router>
-            <div class="text-text_primary bg-bg_primary min-h-screen">
+            <div class="text-text_primary bg-bg_primary min-h-screen relative">
                 <Header/>
                 <Navbar/>
                 <Layout>
@@ -94,7 +94,7 @@ fn Layout(cx: Scope, children: Children) -> impl IntoView {
 #[component]
 pub fn Footer(cx: Scope) -> impl IntoView {
     view! {cx,
-        <footer id="footer">"Hello from the footer"</footer>
+        <footer id="footer" class="w-full">"Hello from the footer"</footer>
     }
 }
 

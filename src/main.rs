@@ -1,4 +1,5 @@
 mod app;
+mod db;
 mod model;
 mod pages;
 use cfg_if::cfg_if;
@@ -26,13 +27,8 @@ cfg_if! {
             };
         }
 
-        async fn get_db_pool(db_url: &str) -> Result<sqlx::Pool<sqlx::Postgres>, sqlx::error::Error> {
-            sqlx::postgres::PgPoolOptions::new()
-            .connect(db_url)
-            .await
-        }
 
-        async fn test(db_pool: &sqlx::Pool<sqlx::Postgres>) {
+        async fn init_forum(db_pool: &sqlx::Pool<sqlx::Postgres>) {
             use model::main_forum::MainForum;
             match MainForum::get_main_forum(db_pool).await {
                 Ok(_) => tracing::info!("The main forum is already set."),
@@ -54,22 +50,26 @@ cfg_if! {
 
         #[actix_web::main]
         async fn main() -> std::io::Result<()> {
+            use crate::pages::home::GetHomePage;
+
             dotenv().ok();
             tracing_subscriber::fmt::init();
 
+
             let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-            let db_pool = get_db_pool(&database_url).await.expect("Couldn't connect to the database");
+            let db_pool = db::get_db_pool(&database_url).await.expect("Couldn't connect to the database");
             migrate(&db_pool).await;
 
-            test(&db_pool).await;
+            init_forum(&db_pool).await;
 
             // Setting this to None means we'll be using cargo-leptos and its env vars.
             let conf = get_configuration(None).await.unwrap();
-
             let addr = conf.leptos_options.site_addr.clone();
-
             // Generate the list of routes in your Leptos App
             let routes = generate_route_list(|cx| view! { cx, <App/> });
+
+
+            _ = GetHomePage::register();
 
             HttpServer::new(move || {
                 let leptos_options = &conf.leptos_options;
@@ -77,6 +77,7 @@ cfg_if! {
                 let routes = &routes;
                 App::new()
                     .service(css)
+                    .route("/api/{tail:.*}", leptos_actix::handle_server_fns())
                     .leptos_routes(leptos_options.to_owned(), routes.to_owned(), |cx| view! { cx, <App/> })
                     .service(Files::new("/", &site_root))
                     .wrap(middleware::Compress::default())

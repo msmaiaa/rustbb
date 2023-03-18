@@ -18,8 +18,8 @@ pub fn App(cx: Scope) -> impl IntoView {
                 <Navbar/>
                 <Layout>
                     <Routes>
-                        <Route path="" view=  move |cx| view! { cx, <Home/> }/>
-                        <Route path="/forum/:id" view=  move |cx| view! { cx, <ForumPage/> }/>
+                        <Route path="" view=move |cx| view! { cx, <Home/> }/>
+                        <Route path="forum/:id" view=move |cx| view! { cx, <ForumPage/> }/>
                     </Routes>
                     <RightSidebar/>
                 </Layout>
@@ -82,7 +82,6 @@ pub fn Card(
 
 #[component]
 fn Layout(cx: Scope, children: Children) -> impl IntoView {
-    provide_meta_context(cx);
     view! {cx,
         <main class="text-inherit bg-inherit h-full flex items-center justify-center">
             <div class="w-[1100px] flex">
@@ -112,11 +111,11 @@ pub fn Navbar(cx: Scope) -> impl IntoView {
         <nav id="navbar" class="bg-bg_primary">
             <div class="flex justify-between items-center">
                 <div class="flex items-center">
-                    <a href="/" class="text-2xl font-bold text-text_primary">"Leptos"</a>
+                    <A href="/" class="text-2xl font-bold text-text_primary">"Leptos"</A>
                 </div>
                 <div class="flex items-center">
-                    <a href="/login" class="text-lg font-bold text-text_primary">"Login"</a>
-                    <a href="/register" class="text-lg font-bold text-text_primary ml-4">"Register"</a>
+                    <A href="/login" class="text-lg font-bold text-text_primary">"Login"</A>
+                    <A href="/register" class="text-lg font-bold text-text_primary ml-4">"Register"</A>
                 </div>
             </div>
         </nav>

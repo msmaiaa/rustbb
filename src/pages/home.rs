@@ -1,48 +1,68 @@
-use crate::model::forum::*;
+use crate::model::{category::Category, forum::*};
 use leptos::*;
+use leptos_router::*;
+use serde::{Deserialize, Serialize};
 
 #[component]
 pub fn Home(cx: Scope) -> impl IntoView {
-    let home_page_data = get_home_data();
+    let home_data = create_resource(cx, || (), |_| async { get_home_data().await });
     view! { cx,
         <div class="h-full w-full">
-            <For
-                each=move || home_page_data.clone()
-                key=|(c, _)| c.id
-                view = move |cx, (category, forums)| {
-                    view! {cx,
-                        <CategoryCard category={category} forums={forums}/>
-                    }
-                }
-            />
+            <Suspense fallback=move || view! { cx, <p>""</p> }>
+                {move || {
+                    home_data.read(cx).map(|data| {
+                        match data {
+                            Err(e) => {
+                                log!("Error: {:#?}", e);
+                                view! {cx, <div>"Error"</div>}
+                            },
+                            Ok(data) => {
+                                view! {cx,
+                                    <div class="flex flex-col w-full">
+                                        <div class="flex flex-col w-full">
+                                            <For
+                                                each=move || data.clone()
+                                                key=|n| n.category.id
+                                                view = move |cx, data| {
+                                                    view! {cx,
+                                                        <CategoryCard category={data.category} forums={data.forums}/>
+                                                    }
+                                                }
+                                            />
+                                        </div>
+                                </div>
+                                }
+                            }
+                        }
+
+                    })
+                }}
+            </Suspense>
         </div>
     }
 }
 
-#[derive(Clone)]
-struct Category {
-    pub id: i32,
-    pub name: String,
-    pub description: String,
-    pub creator_id: String,
-}
-
 #[component]
-fn CategoryCard(cx: Scope, category: Category, forums: Vec<Forum>) -> impl IntoView {
+fn CategoryCard(cx: Scope, category: Category, forums: Option<Vec<Forum>>) -> impl IntoView {
+    let forums = if let Some(forums) = forums {
+        forums
+    } else {
+        vec![]
+    };
     view! {cx,
         <div class="bg-neutral-800 rounded-lg shadow-lg p-4 mb-3">
-            <h2 class="text-2xl font-bold">{category.name}</h2>
+            <h2 class="text-2xl font-bold">{category.title}</h2>
             <p class="text-sm text-text_secondary">{category.description}</p>
             <div class="flex flex-col">
-                <For
-                    each=move || forums.clone()
-                    key=|n| n.id
-                    view = move |cx, forum| {
-                        view! {cx,
-                            <ForumCard forum={forum}/>
+                    <For
+                        each=move || forums.clone()
+                        key=|n| n.id
+                        view = move |cx, forum| {
+                            view! {cx,
+                                <ForumCard forum={forum}/>
+                            }
                         }
-                    }
-                />
+                    />
             </div>
         </div>
     }
@@ -53,9 +73,9 @@ fn ForumCard(cx: Scope, forum: Forum) -> impl IntoView {
     view! {cx,
         <div class="bg-neutral-700 rounded-sm shadow-lg p-4 flex">
             <div class="w-3/5">
-                <a href=format!("/forum/{}.{}", forum.slug, forum.id)>
+                <A href=move || format!("/forum/{}.{}", forum.slug, forum.id)>
                     <h2 class="text-xl font-bold">{forum.title}</h2>
-                </a>
+                </A>
                 <p class="text-sm text-text_secondary">{forum.description}</p>
             </div>
             <div class="flex">
@@ -72,46 +92,76 @@ fn ForumCard(cx: Scope, forum: Forum) -> impl IntoView {
     }
 }
 
-fn get_home_data() -> Vec<(Category, Vec<Forum>)> {
-    let mock_categories = vec![
-        Category {
-            id: 1,
-            name: "General".to_string(),
-            description: "General discussion about the forum".to_string(),
-            creator_id: "1".to_string(),
-        },
-        Category {
-            id: 2,
-            name: "Most popular".to_string(),
-            description: "Most popular stuff".to_string(),
-            creator_id: "1".to_string(),
-        },
-        Category {
-            id: 3,
-            name: "Off-Topic".to_string(),
-            description: "Off-Topic discussion about the forum".to_string(),
-            creator_id: "1".to_string(),
-        },
-    ];
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct CategoryWithForums {
+    pub category: Category,
+    pub forums: Option<Vec<Forum>>,
+}
 
-    mock_categories
-        .into_iter()
-        .map(|c| {
-            let mock_node = Forum {
-                id: 1,
-                title: "This is a forum title".to_string(),
-                category_id: c.id,
-                description: "This is a forum description".to_string(),
-                slug: "this-is-a-forum-slug".to_string(),
-            };
-            let mock_node_2 = Forum {
-                id: 2,
-                title: "This is a forum title2".to_string(),
-                category_id: c.id,
-                description: "This is a forum 2".to_string(),
-                slug: "this-is-a-forum-slug-2".to_string(),
-            };
-            (c, vec![mock_node, mock_node_2])
-        })
-        .collect()
+#[server(GetHomePage, "/api")]
+pub async fn get_home_data() -> Result<Vec<CategoryWithForums>, ServerFnError> {
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+    let mut conn = crate::db::get_db_pool(&database_url).await.unwrap();
+
+    //  retrieves all categories and their forums
+    let query_result = sqlx::query!(
+        r#"
+        SELECT
+        json_agg(
+            json_build_object(
+                'category',
+                json_build_object(
+                    'id', category.id,
+                    'title', category.title,
+                    'description', category.description,
+                    'created_at', category.created_at,
+                    'creator_id', category.creator_id
+                ),
+                'forums', forums.forums
+            )
+        ) AS result
+    FROM
+        category
+        LEFT JOIN (
+            SELECT
+                category_id,
+                json_agg(
+                    json_build_object(
+                        'id', id,
+                        'title', title,
+                        'description', description,
+                        'slug', slug,
+                        'category_id', category_id,
+                        'created_at', created_at
+                    ) ORDER BY id
+                ) AS forums
+            FROM
+                forum
+            GROUP BY
+                category_id
+        ) AS forums ON category.id = forums.category_id
+        "#
+    )
+    .fetch_one(&conn)
+    .await;
+    tracing::info!("before query result");
+    match query_result {
+        Ok(res) => {
+            tracing::info!("aqui");
+            let data = res
+                .result
+                .unwrap()
+                .as_array()
+                .unwrap()
+                .into_iter()
+                .map(|x| serde_json::from_value::<CategoryWithForums>(x.clone()).unwrap())
+                .collect::<Vec<CategoryWithForums>>();
+            return Ok(data);
+        }
+        Err(e) => {
+            tracing::error!("Couldn't fetch the categories and its forums: {:#?}", e);
+        }
+    }
+    Ok(vec![])
 }

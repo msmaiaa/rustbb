@@ -102,7 +102,7 @@ pub struct CategoryWithForums {
 pub async fn get_home_data() -> Result<Vec<CategoryWithForums>, ServerFnError> {
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
-    let mut conn = crate::db::get_db_pool(&database_url).await.unwrap();
+    let mut conn = crate::database::get_db_pool().await.unwrap();
 
     //  retrieves all categories and their forums
     let query_result = sqlx::query!(
@@ -145,10 +145,8 @@ pub async fn get_home_data() -> Result<Vec<CategoryWithForums>, ServerFnError> {
     )
     .fetch_one(&conn)
     .await;
-    tracing::info!("before query result");
     match query_result {
         Ok(res) => {
-            tracing::info!("aqui");
             let data = res
                 .result
                 .unwrap()

@@ -1,5 +1,6 @@
 mod app;
-mod db;
+mod components;
+mod database;
 mod model;
 mod pages;
 use cfg_if::cfg_if;

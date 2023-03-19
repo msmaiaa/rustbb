@@ -1,4 +1,9 @@
+pub mod button;
+pub mod card;
 pub mod footer;
+pub mod form;
 pub mod header;
+pub mod login_form;
 pub mod nav;
+pub mod register_form;
 pub mod sidebar;

@@ -1,6 +1,8 @@
 use crate::components::{footer::*, header::*, nav::*, sidebar::*};
-use crate::pages::forum::{ForumPage, ForumPageProps};
-use crate::pages::home::{Home, HomeProps};
+use crate::pages::forum::*;
+use crate::pages::home::*;
+use crate::pages::login::*;
+use crate::pages::register::*;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
@@ -21,6 +23,8 @@ pub fn App(cx: Scope) -> impl IntoView {
                     <Routes>
                         <Route path="" view=move |cx| view! { cx, <Home/> }/>
                         <Route path="forum/:id" view=move |cx| view! { cx, <ForumPage/> }/>
+                        <Route path="login" view=move |cx| view! { cx, <Login/> }/>
+                        <Route path="register" view=move |cx| view! { cx, <Register/> }/>
                     </Routes>
                     <RightSidebar/>
                 </Layout>

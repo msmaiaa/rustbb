@@ -1,55 +1,7 @@
-use crate::{auth::HashedString, components::register_form::*};
+use crate::components::register_form::*;
 use leptos::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct RegisterUserPayload {
-    pub username: String,
-    pub email: String,
-    pub password: String,
-    pub password_confirmation: String,
-}
-
-//  for some reason it errors when i send a struct instead of primitives
-#[server(RegisterUser, "/api")]
-pub async fn register_user(
-    username: String,
-    email: String,
-    password: String,
-) -> Result<(), ServerFnError> {
-    use crate::auth::*;
-    use crate::database::get_db_pool;
-    use crate::global;
-    use crate::model::user::*;
-    let db = get_db_pool().await.unwrap();
-    let found_user = ForumUser::find_by_username_or_email(&db, &username, &email).await;
-    if let Ok(u) = found_user {
-        if u.username == username {
-            return Err(ServerFnError::ServerError(
-                "Username already in use".to_string(),
-            ));
-        }
-        if u.email == email {
-            return Err(ServerFnError::ServerError(
-                "Email already in use".to_string(),
-            ));
-        }
-    }
-
-    let hashed_pass;
-    hashed_pass = match HashedString::new(&global::ARGON2_SALT.clone(), &password) {
-        Ok(h) => h,
-        Err(e) => {
-            tracing::error!("Error while trying to hash password: {e}");
-            return Err(ServerFnError::ServerError(
-                "Internal server error".to_string(),
-            ));
-        }
-    };
-
-    let created_user = ForumUser::create(&db, &username, &email, hashed_pass).await;
-    Ok(())
-}
 #[component]
 pub fn Register(cx: Scope) -> impl IntoView {
     let (error, set_error) = create_signal(cx, "".to_string());
@@ -103,4 +55,49 @@ pub fn Register(cx: Scope) -> impl IntoView {
             }}
         </div>
     }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct RegisterUserPayload {
+    pub username: String,
+    pub email: String,
+    pub password: String,
+    pub password_confirmation: String,
+}
+
+//  for some reason it errors when i send a struct instead of primitives
+#[server(RegisterUser, "/api")]
+pub async fn register_user(
+    username: String,
+    email: String,
+    password: String,
+) -> Result<(), ServerFnError> {
+    use crate::auth::*;
+    use crate::database::get_db_pool;
+    use crate::error::server_error;
+    use crate::global;
+    use crate::model::user::*;
+
+    let db = get_db_pool().await.unwrap();
+    let found_user = ForumUser::find_by_username_or_email(&db, &username, &email).await;
+    if let Ok(u) = found_user {
+        if u.username == username {
+            return server_error!("Username already in use");
+        }
+        if u.email == email {
+            return server_error!("Email already in use");
+        }
+    }
+
+    let hashed_pass;
+    hashed_pass = match HashedString::new(&global::ARGON2_SALT.clone(), &password) {
+        Ok(h) => h,
+        Err(e) => {
+            tracing::error!("Error while trying to hash password: {e}");
+            return server_error!("Internal server error");
+        }
+    };
+
+    let created_user = ForumUser::create(&db, &username, &email, hashed_pass).await;
+    Ok(())
 }

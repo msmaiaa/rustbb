@@ -2,6 +2,7 @@ mod app;
 mod auth;
 mod components;
 mod database;
+mod error;
 mod global;
 mod model;
 mod pages;
@@ -17,6 +18,12 @@ cfg_if! {
         #[get("/style.css")]
         async fn css() -> impl Responder {
             actix_files::NamedFile::open_async("./style/output.css").await
+        }
+
+        fn register_server_functions() {
+            _ = GetHomePage::register();
+            _ = RegisterUser::register();
+            _ = Login::register();
         }
 
         #[actix_web::main]
@@ -35,13 +42,9 @@ cfg_if! {
             // Setting this to None means we'll be using cargo-leptos and its env vars.
             let conf = get_configuration(None).await.unwrap();
             let addr = conf.leptos_options.site_addr.clone();
-            // Generate the list of routes in your Leptos App
             let routes = generate_route_list(|cx| view! { cx, <App/> });
 
-
-            _ = GetHomePage::register();
-            _ = RegisterUser::register();
-            _ = Login::register();
+            register_server_functions();
 
             HttpServer::new(move || {
                 let leptos_options = &conf.leptos_options;

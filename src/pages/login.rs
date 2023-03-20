@@ -2,17 +2,6 @@ use crate::components::login_form::*;
 use leptos::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct LoginPayload {
-    pub email: String,
-    pub password: String,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct LoginResponse {
-    pub token: String,
-}
-
 #[component]
 pub fn Login(cx: Scope) -> impl IntoView {
     let (error, set_error) = create_signal(cx, "".to_string());
@@ -61,46 +50,52 @@ pub fn Login(cx: Scope) -> impl IntoView {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+pub struct LoginPayload {
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct LoginResponse {
+    pub token: String,
+}
+
 #[server(Login, "/api")]
 pub async fn login(email: String, password: String) -> Result<String, ServerFnError> {
     use crate::auth::*;
     use crate::database::get_db_pool;
+    use crate::error::server_error;
     use crate::global;
     use crate::model::user::*;
 
     let db = get_db_pool().await.unwrap();
-    let found_user = ForumUser::find_by_email(&db, &email).await;
-    match found_user {
-        Ok(db_user) => {
-            let hashed_pass;
-            hashed_pass = match hash(global::ARGON2_SALT.as_ref(), &password) {
-                Ok(h) => h,
-                Err(e) => {
-                    return Err(ServerFnError::ServerError(e.to_string()));
-                }
-            };
-            if db_user.password == hashed_pass {
-                match generate_access_token(db_user.id, global::JWT_KEY.as_ref()) {
-                    Ok(token) => {
-                        return Ok(token);
-                    }
-                    Err(e) => {
-                        return Err(ServerFnError::ServerError(e.to_string()));
-                    }
-                }
-            } else {
-                return Err(ServerFnError::ServerError("Incorrect password".to_string()));
-            }
-        }
+    let found_user;
+    found_user = match ForumUser::find_by_email(&db, &email).await {
         Err(e) => match e {
             sqlx::Error::RowNotFound => {
-                return Err(ServerFnError::ServerError("User not found".to_string()));
+                return server_error!("User not found");
             }
             _ => {
-                return Err(ServerFnError::ServerError(
-                    "Internal server error".to_string(),
-                ));
+                return server_error!("Internal server error");
             }
         },
+        Ok(user) => user,
+    };
+
+    let hashed_pass;
+    hashed_pass = match hash(global::ARGON2_SALT.as_ref(), &password) {
+        Ok(h) => h,
+        Err(e) => return server_error!(e),
+    };
+    if found_user.password == hashed_pass {
+        match generate_access_token(found_user.id, global::JWT_KEY.as_ref()) {
+            Ok(token) => {
+                return Ok(token);
+            }
+            Err(e) => return server_error!(e),
+        }
+    } else {
+        return server_error!("Incorrect password");
     }
 }

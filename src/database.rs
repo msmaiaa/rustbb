@@ -27,7 +27,7 @@ cfg_if!(
                 Err(e) => {
                     match e {
                         sqlx::Error::RowNotFound => {
-                            tracing::info!("The main forum is not set. Creating it now.");
+                            tracing::info!("Main forum not found. Creating it now.");
                             if let Err(e) = MainForum::create(db_pool, "rustbb").await {
                                 tracing::error!("Couldn't create the main forum :( {}", e);
                             }

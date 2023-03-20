@@ -100,6 +100,7 @@ pub struct CategoryWithForums {
 
 #[server(GetHomePage, "/api")]
 pub async fn get_home_data() -> Result<Vec<CategoryWithForums>, ServerFnError> {
+    use crate::error::server_error;
     let mut conn = crate::database::get_db_pool().await.unwrap();
 
     //  retrieves all categories and their forums
@@ -145,16 +146,26 @@ pub async fn get_home_data() -> Result<Vec<CategoryWithForums>, ServerFnError> {
     .await;
     match query_result {
         Ok(res) => {
-            //  FIXME:
-            let data = res
-                .result
-                .unwrap()
-                .as_array()
-                .unwrap()
-                .into_iter()
-                .map(|x| serde_json::from_value::<CategoryWithForums>(x.clone()).unwrap())
-                .collect::<Vec<CategoryWithForums>>();
-            return Ok(data);
+            let data: Result<Vec<CategoryWithForums>, ServerFnError> = match res.result {
+                Some(data) => data,
+                None => return Ok(vec![]),
+            }
+            .as_array()
+            .ok_or(ServerFnError::ServerError(
+                "Internal server error".to_string(),
+            ))?
+            .into_iter()
+            .map(|x| {
+                serde_json::from_value::<CategoryWithForums>(x.clone()).map_err(|e| {
+                    tracing::error!(
+                        "Error serializing CategoryWithForums from the database rows: {}",
+                        e.to_string()
+                    );
+                    ServerFnError::ServerError("Internal server error".to_string())
+                })
+            })
+            .collect();
+            return data;
         }
         Err(e) => {
             tracing::error!("Couldn't fetch the categories and its forums: {:#?}", e);

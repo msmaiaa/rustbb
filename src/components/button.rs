@@ -8,7 +8,7 @@ pub fn Button(
     children: Children,
 ) -> impl IntoView {
     view! {cx,
-        <button type=_type class=format!("bg-blue-500 hover:bg-blue-700 text-white py-1 px-4 rounded {class}")>
+        <button type=_type class=format!("py-1 px-4 rounded {class}")>
             {children(cx)}
         </button>
     }

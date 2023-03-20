@@ -19,6 +19,7 @@ pub async fn register_user(
 ) -> Result<(), ServerFnError> {
     use crate::auth::*;
     use crate::database::get_db_pool;
+    use crate::global;
     use crate::model::user::*;
     let db = get_db_pool().await.unwrap();
     let found_user = ForumUser::find_by_username_or_email(&db, &username, &email).await;
@@ -35,10 +36,8 @@ pub async fn register_user(
         }
     }
 
-    //  TODO: use lazy_static or some similar library for global environment variables
-    let salt = std::env::var("SALT").unwrap_or("123451234512345123451235".to_string());
     let hashed_pass;
-    hashed_pass = match HashedString::new(&salt, &password) {
+    hashed_pass = match HashedString::new(&global::ARGON2_SALT.clone(), &password) {
         Ok(h) => h,
         Err(e) => {
             tracing::error!("Error while trying to hash password: {e}");

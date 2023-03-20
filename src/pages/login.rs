@@ -65,22 +65,22 @@ pub fn Login(cx: Scope) -> impl IntoView {
 pub async fn login(email: String, password: String) -> Result<String, ServerFnError> {
     use crate::auth::*;
     use crate::database::get_db_pool;
+    use crate::global;
     use crate::model::user::*;
 
     let db = get_db_pool().await.unwrap();
     let found_user = ForumUser::find_by_email(&db, &email).await;
     match found_user {
         Ok(db_user) => {
-            let salt = std::env::var("SALT").unwrap_or("123451234512345123451235".to_string());
             let hashed_pass;
-            hashed_pass = match hash(&salt, &password) {
+            hashed_pass = match hash(global::ARGON2_SALT.as_ref(), &password) {
                 Ok(h) => h,
                 Err(e) => {
                     return Err(ServerFnError::ServerError(e.to_string()));
                 }
             };
             if db_user.password == hashed_pass {
-                match generate_access_token(db_user.id) {
+                match generate_access_token(db_user.id, global::JWT_KEY.as_ref()) {
                     Ok(token) => {
                         return Ok(token);
                     }

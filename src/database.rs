@@ -2,9 +2,9 @@ use cfg_if::cfg_if;
 
 cfg_if!(
     if #[cfg(feature = "ssr")] {
+        use crate::global;
         pub async fn get_db_pool() -> Result<sqlx::Pool<sqlx::Postgres>, sqlx::error::Error> {
-            let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-            sqlx::postgres::PgPoolOptions::new().connect(&database_url).await
+            sqlx::postgres::PgPoolOptions::new().connect(global::DATABASE_URL.as_ref()).await
         }
 
         async fn migrate(db_pool: &sqlx::Pool<sqlx::Postgres>) {

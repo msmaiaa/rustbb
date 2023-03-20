@@ -32,7 +32,7 @@ cfg_if!(
             pub exp: i64,
         }
 
-        pub fn generate_access_token(user_id: i32) -> Result<String, jsonwebtoken::errors::Error> {
+        pub fn generate_access_token(user_id: i32, jwt_key: &str) -> Result<String, jsonwebtoken::errors::Error> {
             use jsonwebtoken::{encode, Header, EncodingKey, Algorithm};
             let iat = chrono::Utc::now();
             //  TODO: get the expiration time from a environment variable
@@ -41,7 +41,7 @@ cfg_if!(
             let exp = exp.timestamp_millis();
 
             let key =
-                EncodingKey::from_secret(std::env::var("JWT_KEY").expect("JWT_KEY not set").as_bytes());
+                EncodingKey::from_secret(jwt_key.as_bytes());
             let claims = AccessToken { user_id, iat, exp };
             let header = Header::new(Algorithm::HS256);
             encode(&header, &claims, &key)

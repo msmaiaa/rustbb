@@ -2,6 +2,7 @@ mod app;
 mod auth;
 mod components;
 mod database;
+mod global;
 mod model;
 mod pages;
 use cfg_if::cfg_if;
@@ -20,11 +21,11 @@ cfg_if! {
 
         #[actix_web::main]
         async fn main() -> std::io::Result<()> {
+            use dotenv::dotenv;
+            dotenv().ok();
             use crate::pages::home::GetHomePage;
             use crate::pages::register::RegisterUser;
             use crate::pages::login::Login;
-            use dotenv::dotenv;
-            dotenv().ok();
             use leptos_actix::{generate_route_list, LeptosRoutes};
 
             tracing_subscriber::fmt::init();

@@ -2,6 +2,7 @@ mod app;
 mod auth;
 mod components;
 mod database;
+mod global;
 mod model;
 mod pages;
 use cfg_if::cfg_if;

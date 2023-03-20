@@ -1,4 +1,5 @@
 mod app;
+mod auth;
 mod components;
 mod database;
 mod model;
@@ -20,6 +21,7 @@ cfg_if! {
         #[actix_web::main]
         async fn main() -> std::io::Result<()> {
             use crate::pages::home::GetHomePage;
+            use crate::pages::register::RegisterUser;
             use dotenv::dotenv;
             dotenv().ok();
             use leptos_actix::{generate_route_list, LeptosRoutes};
@@ -36,6 +38,7 @@ cfg_if! {
 
 
             _ = GetHomePage::register();
+            _ = RegisterUser::register();
 
             HttpServer::new(move || {
                 let leptos_options = &conf.leptos_options;

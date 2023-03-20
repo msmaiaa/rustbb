@@ -100,8 +100,6 @@ pub struct CategoryWithForums {
 
 #[server(GetHomePage, "/api")]
 pub async fn get_home_data() -> Result<Vec<CategoryWithForums>, ServerFnError> {
-    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-
     let mut conn = crate::database::get_db_pool().await.unwrap();
 
     //  retrieves all categories and their forums

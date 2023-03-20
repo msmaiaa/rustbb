@@ -21,7 +21,6 @@ pub async fn register_user(
     use crate::database::get_db_pool;
     use crate::model::user::*;
     let db = get_db_pool().await.unwrap();
-
     let found_user = ForumUser::find_by_username_or_email(&db, &username, &email).await;
     if let Ok(u) = found_user {
         if u.username == username {
@@ -36,9 +35,10 @@ pub async fn register_user(
         }
     }
 
+    //  TODO: use lazy_static or some similar library for global environment variables
     let salt = std::env::var("SALT").unwrap_or("123451234512345123451235".to_string());
     let hashed_pass;
-    hashed_pass = match HashedString::new(&password, &salt) {
+    hashed_pass = match HashedString::new(&salt, &password) {
         Ok(h) => h,
         Err(e) => {
             tracing::error!("Error while trying to hash password: {e}");
@@ -59,7 +59,7 @@ pub fn Register(cx: Scope) -> impl IntoView {
     let try_register_user = create_action(cx, move |payload: &RegisterUserPayload| {
         let payload = payload.to_owned();
         async move {
-            let response = register_user(payload.username, payload.password, payload.email).await;
+            let response = register_user(payload.username, payload.email, payload.password).await;
             match response {
                 Ok(_) => {
                     set_success("Successfully registered".to_string());
@@ -87,13 +87,13 @@ pub fn Register(cx: Scope) -> impl IntoView {
                 let success_msg = success.get();
                 if err != "" {
                     view! {cx,
-                        <div class="bg-red-500 text-white rounded-sm p-2">
+                        <div class="bg-red-500 text-white rounded-sm p-2 mt-2">
                             {err}
                         </div>
                     }
                 } else if success_msg != "" {
                     view! {cx,
-                        <div class="bg-green-500 text-white rounded-sm p-2">
+                        <div class="bg-green-500 text-white rounded-sm p-2 mt-2">
                             {success_msg}
                         </div>
                     }

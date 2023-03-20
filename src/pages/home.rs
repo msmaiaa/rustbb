@@ -145,6 +145,7 @@ pub async fn get_home_data() -> Result<Vec<CategoryWithForums>, ServerFnError> {
     .await;
     match query_result {
         Ok(res) => {
+            //  FIXME:
             let data = res
                 .result
                 .unwrap()

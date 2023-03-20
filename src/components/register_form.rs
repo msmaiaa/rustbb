@@ -20,7 +20,7 @@ where
         if password.get() != password_confirmation.get() {
             set_error("Passwords do not match".to_string());
             return;
-        } else if error.get() != "" {
+        } else if error() != "" {
             set_error("".to_string());
         }
         if username.get() != "" && email.get() != "" {
@@ -44,9 +44,9 @@ where
                 <FormRow signal=Some(password) required=true label="Password" id="password" _type="password" class="mb-2"/>
                 <FormRow signal=Some(password_confirmation) required=true label="Confirm password" id="password_confirmation" _type="password"/>
                 {move || {
-                    if error.get() != "" {
+                    if error() != "" {
                         view! {cx,
-                            <div class="text-red-500 text-sm">{error.get()}</div>
+                            <div class="text-red-500 text-sm">{error()}</div>
                         }
                     } else {
                         view! {cx, <div></div>}

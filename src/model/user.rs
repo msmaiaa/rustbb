@@ -39,6 +39,16 @@ cfg_if!(
                 )
                 .fetch_one(pool).await
             }
+
+            pub async fn find_by_email(pool: &sqlx::Pool<sqlx::Postgres>, email: &str) -> Result<Self, sqlx::Error> {
+                sqlx::query_as!(Self,
+                    r#"
+                    SELECT * FROM forum_user WHERE email = $1
+                    "#,
+                    email
+                )
+                .fetch_one(pool).await
+            }
         }
     }
 );

@@ -24,5 +24,27 @@ cfg_if!(
             let config = Config::default();
             argon2::hash_encoded(content.as_bytes(), salt.as_bytes(), &config)
         }
+
+        #[derive(serde::Serialize, serde::Deserialize)]
+        pub struct AccessToken {
+            pub user_id: i32,
+            pub iat: i64,
+            pub exp: i64,
+        }
+
+        pub fn generate_access_token(user_id: i32) -> Result<String, jsonwebtoken::errors::Error> {
+            use jsonwebtoken::{encode, Header, EncodingKey, Algorithm};
+            let iat = chrono::Utc::now();
+            //  TODO: get the expiration time from a environment variable
+            let exp = iat + chrono::Duration::seconds(3600);
+            let iat = iat.timestamp_millis();
+            let exp = exp.timestamp_millis();
+
+            let key =
+                EncodingKey::from_secret(std::env::var("JWT_KEY").expect("JWT_KEY not set").as_bytes());
+            let claims = AccessToken { user_id, iat, exp };
+            let header = Header::new(Algorithm::HS256);
+            encode(&header, &claims, &key)
+        }
     }
 );

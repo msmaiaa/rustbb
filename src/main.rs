@@ -21,6 +21,9 @@ cfg_if! {
         }
 
         fn register_server_functions() {
+            use crate::pages::home::GetHomePage;
+            use crate::pages::register::RegisterUser;
+            use crate::components::login_form::Login;
             _ = GetHomePage::register();
             _ = RegisterUser::register();
             _ = Login::register();
@@ -30,9 +33,6 @@ cfg_if! {
         async fn main() -> std::io::Result<()> {
             use dotenv::dotenv;
             dotenv().ok();
-            use crate::pages::home::GetHomePage;
-            use crate::pages::register::RegisterUser;
-            use crate::pages::login::Login;
             use leptos_actix::{generate_route_list, LeptosRoutes};
 
             tracing_subscriber::fmt::init();

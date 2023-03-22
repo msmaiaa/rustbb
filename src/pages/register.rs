@@ -36,13 +36,13 @@ pub fn Register(cx: Scope) -> impl IntoView {
             {move || {
                 let err = error.get();
                 let success_msg = success.get();
-                if err != "" {
+                if !err.is_empty() {
                     view! {cx,
                         <div class="bg-red-500 text-white rounded-sm p-2 mt-2">
                             {err}
                         </div>
                     }
-                } else if success_msg != "" {
+                } else if !success_msg.is_empty() {
                     view! {cx,
                         <div class="bg-green-500 text-white rounded-sm p-2 mt-2">
                             {success_msg}

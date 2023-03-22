@@ -33,7 +33,7 @@ pub fn LoginForm(cx: Scope) -> impl IntoView {
     };
 
     let on_submit = move || {
-        if email.get() != "" && password.get() != "" {
+        if !email.get().is_empty() && !password.get().is_empty() {
             on_login(LoginPayload {
                 email: email.get(),
                 password: password.get(),
@@ -53,13 +53,13 @@ pub fn LoginForm(cx: Scope) -> impl IntoView {
             </form>
 
             {move|| {
-                if error() != "" {
+                if !error().is_empty() {
                     view! {cx,
                         <div class="bg-red-500 text-white rounded-sm p-2 mt-2">
                             {error()}
                         </div>
                     }
-                } else if token() != "" {
+                } else if !token().is_empty() {
                     view! {cx,
                         <div class="bg-green-500 text-white rounded-sm p-2 mt-2">
                             {token()}

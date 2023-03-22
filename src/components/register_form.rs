@@ -20,10 +20,10 @@ where
         if password.get() != password_confirmation.get() {
             set_error("Passwords do not match".to_string());
             return;
-        } else if error() != "" {
+        } else if !error().is_empty() {
             set_error("".to_string());
         }
-        if username.get() != "" && email.get() != "" {
+        if !username.get().is_empty() && !email.get().is_empty() {
             on_register(RegisterUserPayload {
                 username: username.get(),
                 email: email.get(),
@@ -44,7 +44,7 @@ where
                 <FormRow signal=Some(password) required=true label="Password" id="password" _type="password" class="mb-2"/>
                 <FormRow signal=Some(password_confirmation) required=true label="Confirm password" id="password_confirmation" _type="password"/>
                 {move || {
-                    if error() != "" {
+                    if !error().is_empty() {
                         view! {cx,
                             <div class="text-red-500 text-sm">{error()}</div>
                         }

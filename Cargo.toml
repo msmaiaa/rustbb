@@ -17,6 +17,7 @@ leptos_actix = { version = "0.2.3", optional = true }
 leptos_meta = { version = "0.2.3", default-features = false }
 leptos_router = { version = "0.2.3", default-features = false }
 gloo-net = { version = "0.2", features = ["http"] }
+gloo-storage = "0.2"
 log = "0.4"
 chrono = {version = "0.4.23", features = ["serde"]}
 cfg-if = "1.0"
@@ -45,7 +46,6 @@ static_init = { version = "1.0.3", optional = true}
 [features]
 default = ["hydrate"]
 hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate", "dep:wasm-bindgen", "dep:console_log", "dep:console_error_panic_hook"]
-csr = ["leptos/csr", "leptos_meta/csr", "leptos_router/csr", "dep:wasm-bindgen", "dep:console_log", "dep:console_error_panic_hook"]
 ssr = ["leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:leptos_actix", "dep:actix-web", "dep:actix-files", "dep:futures", "dep:simple_logger", "dep:dotenv", "dep:tracing", "dep:tracing-subscriber", "dep:sqlx", "dep:rust-argon2", "dep:jsonwebtoken", "dep:static_init"]
 
 [package.metadata.cargo-all-features]

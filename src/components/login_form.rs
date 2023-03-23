@@ -5,20 +5,24 @@ use leptos::*;
 use serde::Deserialize;
 use serde::Serialize;
 
+const JWT_STORAGE_KEY: &str = "auth_token";
+
 #[component]
 pub fn LoginForm(cx: Scope) -> impl IntoView {
+    use gloo_storage::{LocalStorage, Storage};
+
     let (error, set_error) = create_signal(cx, "".to_string());
-    let (token, set_token) = create_signal(cx, "".to_string());
     let email = create_rw_signal(cx, "".to_string());
     let password = create_rw_signal(cx, "".to_string());
 
     let try_login = create_action(cx, move |payload: &LoginPayload| {
         let payload = payload.to_owned();
         async move {
-            let response = login(payload.email, payload.password).await;
-            match response {
-                Ok(token) => {
-                    set_token(token);
+            match login(payload.email, payload.password).await {
+                Ok(response) => {
+                    if LocalStorage::set(JWT_STORAGE_KEY, response.token).is_err() {
+                        log::error!("Failed to save token to local storage");
+                    }
                 }
                 Err(e) => {
                     set_error(e.to_string());
@@ -27,17 +31,14 @@ pub fn LoginForm(cx: Scope) -> impl IntoView {
         }
     });
 
-    let on_login = move |payload: LoginPayload| {
-        set_error("".to_string());
-        try_login.dispatch(payload);
-    };
-
     let on_submit = move || {
         if !email.get().is_empty() && !password.get().is_empty() {
-            on_login(LoginPayload {
+            set_error("".to_string());
+            let payload = LoginPayload {
                 email: email.get(),
                 password: password.get(),
-            });
+            };
+            try_login.dispatch(payload);
         }
     };
 
@@ -59,12 +60,6 @@ pub fn LoginForm(cx: Scope) -> impl IntoView {
                             {error()}
                         </div>
                     }
-                } else if !token().is_empty() {
-                    view! {cx,
-                        <div class="bg-green-500 text-white rounded-sm p-2 mt-2">
-                            {token()}
-                        </div>
-                    }
                 } else {
                     view! {cx, <div></div>}
                 }
@@ -82,10 +77,11 @@ pub struct LoginPayload {
 #[derive(Serialize, Deserialize)]
 pub struct LoginResponse {
     pub token: String,
+    pub username: String,
 }
 
 #[server(Login, "/api")]
-pub async fn login(email: String, password: String) -> Result<String, ServerFnError> {
+pub async fn login(email: String, password: String) -> Result<LoginResponse, ServerFnError> {
     use crate::auth::*;
     use crate::database::get_db_pool;
     use crate::error::server_error;
@@ -93,28 +89,27 @@ pub async fn login(email: String, password: String) -> Result<String, ServerFnEr
     use crate::model::user::*;
 
     let db = get_db_pool().await.unwrap();
-    let found_user;
-    found_user = match ForumUser::find_by_email(&db, &email).await {
+
+    let found_user = match ForumUser::find_by_email(&db, &email).await {
         Err(e) => match e {
-            sqlx::Error::RowNotFound => {
-                return server_error!("User not found");
-            }
-            _ => {
-                return server_error!("Internal server error");
-            }
+            sqlx::Error::RowNotFound => return server_error!("User not found"),
+            _ => return server_error!("Internal server error"),
         },
         Ok(user) => user,
     };
 
-    let hashed_pass;
-    hashed_pass = match hash(global::ARGON2_SALT.as_ref(), &password) {
+    let hashed_pass = match hash(global::ARGON2_SALT.as_ref(), &password) {
         Ok(h) => h,
         Err(e) => return server_error!(e),
     };
+
     if found_user.password == hashed_pass {
         match generate_access_token(found_user.id, global::JWT_KEY.as_ref()) {
             Ok(token) => {
-                return Ok(token);
+                return Ok(LoginResponse {
+                    token,
+                    username: found_user.username,
+                });
             }
             Err(e) => return server_error!(e),
         }

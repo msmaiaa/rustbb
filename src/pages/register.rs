@@ -66,7 +66,7 @@ pub struct RegisterUserPayload {
 }
 
 //  for some reason it errors when i send a struct instead of primitives
-#[server(RegisterUser, "/api")]
+#[server(RegisterUser)]
 pub async fn register_user(
     username: String,
     email: String,

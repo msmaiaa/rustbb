@@ -98,7 +98,7 @@ pub struct CategoryWithForums {
     pub forums: Option<Vec<Forum>>,
 }
 
-#[server(GetHomePage, "/api")]
+#[server(GetHomePage)]
 pub async fn get_home_data() -> Result<Vec<CategoryWithForums>, ServerFnError> {
     use crate::error::server_error;
     let mut conn = crate::database::get_db_pool().await.unwrap();

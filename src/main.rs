@@ -27,6 +27,7 @@ cfg_if! {
             _ = GetHomePage::register();
             _ = RegisterUser::register();
             _ = Login::register();
+            _ = GetCurrentUser::register();
         }
 
         #[actix_web::main]
@@ -52,7 +53,7 @@ cfg_if! {
                 let routes = &routes;
                 App::new()
                     .service(css)
-                    .route("/api/{tail:.*}", leptos_actix::handle_server_fns())
+                    .route("/{tail:.*}", leptos_actix::handle_server_fns())
                     .leptos_routes(leptos_options.to_owned(), routes.to_owned(), |cx| view! { cx, <App/> })
                     .service(Files::new("/", &site_root))
                     .wrap(middleware::Compress::default())

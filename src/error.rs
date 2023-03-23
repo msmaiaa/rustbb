@@ -1,6 +1,6 @@
 macro_rules! server_error {
     ($e:expr) => {
-        return Err(ServerFnError::ServerError($e.to_string()));
+        Err(ServerFnError::ServerError($e.to_string()))
     };
 }
 

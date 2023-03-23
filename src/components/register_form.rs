@@ -23,6 +23,7 @@ where
         } else if !error().is_empty() {
             set_error("".to_string());
         }
+
         if !username.get().is_empty() && !email.get().is_empty() {
             on_register(RegisterUserPayload {
                 username: username.get(),

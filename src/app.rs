@@ -7,7 +7,7 @@ use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
 pub struct LoggedUserData {
     pub username: String,
     pub avatar_url: Option<String>,
@@ -27,7 +27,6 @@ pub async fn get_current_user(cx: Scope) -> Result<GetCurrentUserResponse, Serve
         Some(req) => req,
         None => return server_error!("Couldn't get the request's info."),
     };
-    tracing::info!("{:?}", req.cookies());
 
     let token = match req.cookie("auth_token") {
         Some(token) => token.value().to_string(),
@@ -63,25 +62,23 @@ pub async fn get_current_user(cx: Scope) -> Result<GetCurrentUserResponse, Serve
 
 #[component]
 pub fn App(cx: Scope) -> impl IntoView {
+    provide_meta_context(cx);
     let user_data = create_rw_signal(cx, None::<LoggedUserData>);
-    let _ = create_resource(
-        cx,
-        || (),
-        move |_| async move {
-            match get_current_user(cx).await {
-                Ok(user) => {
-                    user_data.set(Some(LoggedUserData {
+
+    provide_context(cx, user_data);
+    leptos::spawn_local(async move {
+        match get_current_user(cx).await {
+            Ok(user) => {
+                user_data.update(|v| {
+                    *v = Some(LoggedUserData {
                         username: user.username,
                         avatar_url: user.avatar_url,
-                    }));
-                }
-                Err(_) => {}
+                    })
+                });
             }
-        },
-    );
-
-    provide_meta_context(cx);
-    provide_context(cx, user_data);
+            Err(_) => {}
+        }
+    });
 
     view! {
         cx,

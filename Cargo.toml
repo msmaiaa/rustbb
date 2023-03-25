@@ -10,12 +10,12 @@ crate-type = ["cdylib", "rlib"]
 
 
 [dependencies]
-leptos = { version = "0.2.1", default-features = false, features = [
+leptos = { version = "0.2.4", default-features = false, features = [
   "serde",
 ] }
-leptos_actix = { version = "0.2.3", optional = true }
-leptos_meta = { version = "0.2.3", default-features = false }
-leptos_router = { version = "0.2.3", default-features = false }
+leptos_actix = { version = "0.2.4", optional = true }
+leptos_meta = { version = "0.2.4", default-features = false }
+leptos_router = { version = "0.2.4", default-features = false }
 gloo-net = { version = "0.2", features = ["http"] }
 gloo-storage = "0.2"
 log = "0.4"

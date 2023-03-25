@@ -23,7 +23,7 @@ cfg_if!(
             use crate::model::main_forum::MainForum;
 
             match MainForum::get_main_forum(db_pool).await {
-                Ok(_) => tracing::info!("The main forum is already set."),
+                Ok(_) => tracing::info!("The main forum is already created."),
                 Err(e) => {
                     match e {
                         sqlx::Error::RowNotFound => {

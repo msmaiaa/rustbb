@@ -28,8 +28,8 @@ cfg_if!(
                 .fetch_one(pool).await
             }
 
-            pub async fn create(pool: &sqlx::Pool<sqlx::Postgres>, username: &str, email: &str, password: HashedString) -> Result<sqlx::postgres::PgRow, sqlx::Error> {
-                sqlx::query_as!(Self,
+            pub async fn create(pool: &sqlx::Pool<sqlx::Postgres>, username: &str, email: &str, password: HashedString) -> Result<sqlx::postgres::PgQueryResult, sqlx::Error> {
+                sqlx::query!(
                     r#"
                     INSERT INTO forum_user (username, email, password)
                     VALUES ($1, $2, $3)
@@ -38,7 +38,7 @@ cfg_if!(
                     email,
                     password.as_ref()
                 )
-                .fetch_one(pool).await
+                .execute(pool).await
             }
 
             pub async fn find_by_email(pool: &sqlx::Pool<sqlx::Postgres>, email: &str) -> Result<Self, sqlx::Error> {
@@ -47,6 +47,16 @@ cfg_if!(
                     SELECT * FROM forum_user WHERE email = $1
                     "#,
                     email
+                )
+                .fetch_one(pool).await
+            }
+
+            pub async fn find_by_username(pool: &sqlx::Pool<sqlx::Postgres>, username: &str) -> Result<Self, sqlx::Error> {
+                sqlx::query_as!(Self,
+                    r#"
+                    SELECT * FROM forum_user WHERE username = $1
+                    "#,
+                    username
                 )
                 .fetch_one(pool).await
             }

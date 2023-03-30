@@ -3,6 +3,7 @@ use leptos::*;
 
 #[component]
 pub fn RightSidebar(cx: Scope) -> impl IntoView {
+    //  TODO: implement a server function to get the number of members online
     view! {cx,
         <div class="flex flex-col w-64 ml-3">
             <Card title="Members online">
@@ -15,6 +16,7 @@ pub fn RightSidebar(cx: Scope) -> impl IntoView {
 
 #[component]
 pub fn ForumStatistics(cx: Scope) -> impl IntoView {
+    //  TODO: make all this work instead of being static data
     view! {cx,
         <Card title="Forum statistics" class="mt-3">
             <div class="flex flex-col">

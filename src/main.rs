@@ -2,60 +2,104 @@ mod app;
 mod auth;
 mod components;
 mod database;
+mod error;
+mod error_template;
+mod fallback;
+mod global;
 mod model;
 mod pages;
 use cfg_if::cfg_if;
 
 cfg_if! {
     if #[cfg(feature = "ssr")] {
-        use actix_web::*;
         use leptos::*;
         use crate::app::*;
-        use actix_files::Files;
+        use std::sync::Arc;
+        use axum::{
+            response::{Response, IntoResponse},
+            routing::{post, get},
+            extract::{Path, Extension},
+            http::{Request, header::HeaderMap, Uri},
+            body::Body as AxumBody,
+            Router,
+        };
+        use crate::fallback::*;
+        use strum::{IntoEnumIterator};
+        use leptos_axum::{generate_route_list, LeptosRoutes, handle_server_fns_with_context};
 
-        #[get("/style.css")]
-        async fn css() -> impl Responder {
-            actix_files::NamedFile::open_async("./style/output.css").await
+        fn register_server_functions() {
+            use crate::pages::register::RegisterUser;
+            use crate::components::login_form::Login;
+            _ = RegisterUser::register();
+            _ = Login::register();
+            _ = GetCurrentUser::register();
         }
 
-        #[actix_web::main]
-        async fn main() -> std::io::Result<()> {
-            use crate::pages::home::GetHomePage;
-            use crate::pages::register::RegisterUser;
-            use crate::pages::login::Login;
+        async fn server_fn_handler(path: Path<String>, headers: HeaderMap, request: Request<AxumBody>) -> impl IntoResponse {
+            handle_server_fns_with_context(path, headers, move |_| {}, request).await
+        }
+
+        async fn handle_route_with_ctx<F>(req: Request<AxumBody>, options: Arc<LeptosOptions>, f: F) -> Response
+            where F: Fn(Scope) + Clone + Send + Sync + 'static
+         {
+            let handler = leptos_axum::render_app_to_stream_with_context((*options).clone(),
+            f,
+                |cx| view! { cx, <App/> }
+            );
+            handler(req).await.into_response()
+        }
+
+        async fn handle_route_default(req: Request<AxumBody>, options: Arc<LeptosOptions>) -> Response {
+            let handler = leptos_axum::render_app_to_stream_with_context((*options).clone(),
+                move |_| {},
+                |cx| view! { cx, <App/> }
+            );
+            handler(req).await.into_response()
+        }
+
+        ///  handles frontend routes
+        async fn leptos_routes_handler(Extension(options): Extension<Arc<LeptosOptions>>, uri: Uri, req: Request<AxumBody>) -> Response{
+            let uri = uri.clone();
+            for page in crate::pages::Page::iter() {
+                if uri.path().eq(&page.path()) {
+                    if let Some(f) = page.preload_fn() {
+                        let cb = f.await;
+                        return handle_route_with_ctx(req, options, move |cx| {
+                            cb(cx);
+                        }).await;
+                    }
+                }
+            }
+            return handle_route_default(req, options).await;
+        }
+
+        #[tokio::main]
+        async fn main() {
             use dotenv::dotenv;
             dotenv().ok();
-            use leptos_actix::{generate_route_list, LeptosRoutes};
+            use leptos_axum::{generate_route_list, LeptosRoutes, handle_server_fns_with_context};
 
             tracing_subscriber::fmt::init();
 
             database::setup().await;
 
-            // Setting this to None means we'll be using cargo-leptos and its env vars.
-            let conf = get_configuration(None).await.unwrap();
+            let conf = get_configuration(Some("Cargo.toml")).await.unwrap();
             let addr = conf.leptos_options.site_addr.clone();
-            // Generate the list of routes in your Leptos App
-            let routes = generate_route_list(|cx| view! { cx, <App/> });
+            let routes = generate_route_list(|cx| view! { cx, <App/> }).await;
 
+            register_server_functions();
 
-            _ = GetHomePage::register();
-            _ = RegisterUser::register();
-            _ = Login::register();
+            let app = Router::new()
+            .leptos_routes_with_handler(routes, get(leptos_routes_handler) )
+            .route("/api/*fn_name", post(leptos_axum::handle_server_fns))
+            .fallback(file_and_error_handler)
+            .layer(Extension(Arc::new(conf.leptos_options)));
 
-            HttpServer::new(move || {
-                let leptos_options = &conf.leptos_options;
-                let site_root = &leptos_options.site_root;
-                let routes = &routes;
-                App::new()
-                    .service(css)
-                    .route("/api/{tail:.*}", leptos_actix::handle_server_fns())
-                    .leptos_routes(leptos_options.to_owned(), routes.to_owned(), |cx| view! { cx, <App/> })
-                    .service(Files::new("/", &site_root))
-                    .wrap(middleware::Compress::default())
-            })
-            .bind(&addr)?
-            .run()
+            axum::Server::bind(&addr)
+            .serve(app.into_make_service())
             .await
+            .unwrap();
+
         }
     }
     else {

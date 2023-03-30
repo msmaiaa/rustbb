@@ -3,41 +3,39 @@ use leptos::*;
 use leptos_router::*;
 use serde::{Deserialize, Serialize};
 
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct Teste {
+    pub member: i32,
+}
+
 #[component]
 pub fn Home(cx: Scope) -> impl IntoView {
-    let home_data = create_resource(cx, || (), |_| async { get_home_data().await });
+    let home_data = use_context::<Vec<CategoryWithForums>>(cx);
     view! { cx,
         <div class="h-full w-full">
-            <Suspense fallback=move || view! { cx, <p>""</p> }>
-                {move || {
-                    home_data.read(cx).map(|data| {
-                        match data {
-                            Err(e) => {
-                                log!("Error: {:#?}", e);
-                                view! {cx, <div>"Error"</div>}
-                            },
-                            Ok(data) => {
+            <div class="flex flex-col w-full">
+                {match home_data {
+                    Some(data) => view!{cx,
+                        <div>
+                            <For
+                            each=move || data.clone()
+                            key=|n| n.category.id
+                            view = move |cx, data| {
                                 view! {cx,
-                                    <div class="flex flex-col w-full">
-                                        <div class="flex flex-col w-full">
-                                            <For
-                                                each=move || data.clone()
-                                                key=|n| n.category.id
-                                                view = move |cx, data| {
-                                                    view! {cx,
-                                                        <CategoryCard category={data.category} forums={data.forums}/>
-                                                    }
-                                                }
-                                            />
-                                        </div>
-                                </div>
+                                    <CategoryCard category={data.category} forums={data.forums}/>
                                 }
                             }
-                        }
-
-                    })
+                            />
+                        </div>
+                    },
+                    None =>
+                    view! {
+                        cx,
+                        <div/>
+                    }
                 }}
-            </Suspense>
+
+            </div>
         </div>
     }
 }
@@ -98,8 +96,9 @@ pub struct CategoryWithForums {
     pub forums: Option<Vec<Forum>>,
 }
 
-#[server(GetHomePage, "/api")]
+#[cfg(feature = "ssr")]
 pub async fn get_home_data() -> Result<Vec<CategoryWithForums>, ServerFnError> {
+    use crate::error::server_error;
     let mut conn = crate::database::get_db_pool().await.unwrap();
 
     //  retrieves all categories and their forums
@@ -145,16 +144,26 @@ pub async fn get_home_data() -> Result<Vec<CategoryWithForums>, ServerFnError> {
     .await;
     match query_result {
         Ok(res) => {
-            //  FIXME:
-            let data = res
-                .result
-                .unwrap()
-                .as_array()
-                .unwrap()
-                .into_iter()
-                .map(|x| serde_json::from_value::<CategoryWithForums>(x.clone()).unwrap())
-                .collect::<Vec<CategoryWithForums>>();
-            return Ok(data);
+            let data: Result<Vec<CategoryWithForums>, ServerFnError> = match res.result {
+                Some(data) => data,
+                None => return Ok(vec![]),
+            }
+            .as_array()
+            .ok_or(ServerFnError::ServerError(
+                "Internal server error".to_string(),
+            ))?
+            .into_iter()
+            .map(|x| {
+                serde_json::from_value::<CategoryWithForums>(x.clone()).map_err(|e| {
+                    tracing::error!(
+                        "Error serializing CategoryWithForums from the database rows: {}",
+                        e.to_string()
+                    );
+                    ServerFnError::ServerError("Internal server error".to_string())
+                })
+            })
+            .collect();
+            return data;
         }
         Err(e) => {
             tracing::error!("Couldn't fetch the categories and its forums: {:#?}", e);

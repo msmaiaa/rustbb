@@ -13,7 +13,7 @@ crate-type = ["cdylib", "rlib"]
 leptos = { version = "0.2.4", default-features = false, features = [
   "serde",
 ] }
-leptos_actix = { version = "0.2.4", optional = true }
+leptos_axum = { version = "0.2.4", optional = true }
 leptos_meta = { version = "0.2.4", default-features = false }
 leptos_router = { version = "0.2.4", default-features = false }
 gloo-net = { version = "0.2", features = ["http"] }
@@ -28,8 +28,9 @@ console_log = { version = "0.2", optional = true }
 console_error_panic_hook = { version = "0.1", optional = true }
 
 # dependecies for server (enable when ssr set)
-actix-files = { version = "0.6", optional = true }
-actix-web = { version = "4", features = ["macros"], optional = true }
+axum = { version = "0.6.1", optional = true }
+tower = { version = "0.4.13", optional = true }
+tower-http = { version = "0.3.4", features = ["fs"], optional = true }
 futures = { version = "0.3", optional = true }
 simple_logger = { version = "4.0", optional = true }
 
@@ -37,25 +38,29 @@ dotenv = { version = "0.15.0", optional = true }
 tracing = { version = "0.1.37", optional = true}
 tracing-subscriber = { version = "0.3.16", optional = true}
 sqlx = { version = "0.6", features = [ "runtime-tokio-rustls", "postgres", "chrono", "json" ], optional = true }
+tokio = { version = "1.22.0", features = ["full"], optional = true }
 serde = "1.0.152"
 serde_json = "1.0.93"
 rust-argon2 = { version = "1.0.0", optional = true}
 jsonwebtoken = { version = "8.3.0", optional = true}
 static_init = { version = "1.0.3", optional = true}
+wildmatch = "2.1.1"
+strum_macros = "0.24.3"
+strum = "0.24.1"
+http = "0.2.9"
+cookie = "0.17.0"
+thiserror = "1.0.40"
 
 [features]
 default = ["hydrate"]
 hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate", "dep:wasm-bindgen", "dep:console_log", "dep:console_error_panic_hook"]
-ssr = ["leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:leptos_actix", "dep:actix-web", "dep:actix-files", "dep:futures", "dep:simple_logger", "dep:dotenv", "dep:tracing", "dep:tracing-subscriber", "dep:sqlx", "dep:rust-argon2", "dep:jsonwebtoken", "dep:static_init"]
+ssr = ["leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:axum", "dep:tower", "dep:tower-http", "dep:futures", "dep:simple_logger", "dep:dotenv", "dep:tracing", "dep:tracing-subscriber", "dep:sqlx", "dep:rust-argon2", "dep:jsonwebtoken", "dep:static_init", "dep:leptos_axum", "dep:tokio"]
 
 [package.metadata.cargo-all-features]
 denylist = [
-  "actix-files",
-  "actix-web",
   "console_error_panic_hook",
   "console_log",
   "futures",
-  "leptos_actix",
   "simple_logger",
   "wasm-bindgen",
   "rbatis",
@@ -70,6 +75,7 @@ lto = true
 opt-level = 'z'
 
 [package.metadata.leptos]
+output-name = "rustbb"
 # The site root folder is where cargo-leptos generate all output. WARNING: all content of this folder will be erased on a rebuild. Use it in your server setup.
 site-root = "target/site"
 # The site-root relative folder where all compiled output (JS, WASM and CSS) is written

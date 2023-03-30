@@ -3,6 +3,7 @@ mod auth;
 mod components;
 mod database;
 mod error;
+mod error_template;
 mod global;
 mod model;
 mod pages;

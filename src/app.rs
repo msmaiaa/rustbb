@@ -3,6 +3,8 @@ use crate::pages::forum::*;
 use crate::pages::home::*;
 use crate::pages::login::*;
 use crate::pages::register::*;
+use crate::pages::Page;
+use cookie::Cookie;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
@@ -19,17 +21,38 @@ pub struct GetCurrentUserResponse {
     pub avatar_url: Option<String>,
 }
 
-#[server(GetCurrentUser)]
+#[server(GetCurrentUser, "/api")]
 pub async fn get_current_user(cx: Scope) -> Result<GetCurrentUserResponse, ServerFnError> {
     use crate::auth::*;
     use crate::error::server_error;
-    let req = match use_context::<actix_web::HttpRequest>(cx) {
-        Some(req) => req,
+
+    let req = match use_context::<leptos_axum::LeptosRequest<axum::body::Body>>(cx) {
+        Some(req) => req.take_request().unwrap(),
         None => return server_error!("Couldn't get the request's info."),
     };
 
-    let token = match req.cookie("auth_token") {
-        Some(token) => token.value().to_string(),
+    let cookies = req
+        .headers()
+        .get(http::header::COOKIE)
+        .unwrap()
+        .to_str()
+        .ok()
+        .map(|cookies| cookies.to_owned())
+        .unwrap();
+    let mut found_cookie = None;
+    //  TODO: change to access_token
+    for cookie in Cookie::split_parse(cookies) {
+        let cookie = cookie.unwrap();
+        match cookie.name() {
+            "auth_token" => {
+                found_cookie = Some(cookie);
+                break;
+            }
+            _ => {}
+        }
+    }
+    let token = match found_cookie {
+        Some(token) => token.value().to_owned(),
         None => return server_error!("Couldn't find the authorization token cookie."),
     };
 
@@ -45,13 +68,10 @@ pub async fn get_current_user(cx: Scope) -> Result<GetCurrentUserResponse, Serve
     .await
     {
         Ok(user) => user,
-        Err(e) => {
-            tracing::error!("{:?}", e);
-            match e {
-                sqlx::Error::RowNotFound => return server_error!("User not found"),
-                _ => return server_error!("Internal server error"),
-            }
-        }
+        Err(e) => match e {
+            sqlx::Error::RowNotFound => return server_error!("User not found"),
+            _ => return server_error!("Internal server error"),
+        },
     };
 
     return Ok(GetCurrentUserResponse {
@@ -80,6 +100,11 @@ pub fn App(cx: Scope) -> impl IntoView {
         }
     });
 
+    create_effect(cx, move |_| match user_data.get() {
+        Some(_) => log!("User logged in"),
+        None => log!("User not logged in"),
+    });
+
     view! {
         cx,
         <Stylesheet id="leptos" href="/pkg/rustbb.css"/>
@@ -93,10 +118,10 @@ pub fn App(cx: Scope) -> impl IntoView {
                 <Navbar/>
                 <Layout>
                     <Routes>
-                        <Route path="" view=move |cx| view! { cx, <Home/> }/>
-                        <Route path="forum/:id" view=move |cx| view! { cx, <ForumPage/> }/>
-                        <Route path="login" view=move |cx| view! { cx, <Login/> }/>
-                        <Route path="register" view=move |cx| view! { cx, <Register/> }/>
+                        <Route path={Page::Home.path()} view=move |cx| view! { cx, <Home/> }/>
+                        <Route path={Page::Forum.path()} view=move |cx| view! { cx, <ForumPage/> }/>
+                        <Route path={Page::Login.path()} view=move |cx| view! { cx, <Login/> }/>
+                        <Route path={Page::Register.path()} view=move |cx| view! { cx, <Register/> }/>
                     </Routes>
                     <RightSidebar/>
                 </Layout>

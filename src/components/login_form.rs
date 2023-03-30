@@ -82,7 +82,7 @@ pub struct LoginResponse {
     pub avatar_url: Option<String>,
 }
 
-#[server(Login)]
+#[server(Login, "/api")]
 pub async fn login(
     cx: Scope,
     email: String,
@@ -93,12 +93,10 @@ pub async fn login(
     use crate::error::server_error;
     use crate::global;
     use crate::model::user::*;
-    use actix_web::http::header::{HeaderName, HeaderValue};
-    use leptos_actix::ResponseOptions;
 
     let db = get_db_pool().await.unwrap();
 
-    let response = match use_context::<ResponseOptions>(cx) {
+    let response = match use_context::<leptos_axum::ResponseOptions>(cx) {
         Some(r) => r,
         None => return server_error!("Couldn't get response options"),
     };
@@ -120,8 +118,8 @@ pub async fn login(
         match generate_access_token(found_user.id, global::JWT_KEY.as_ref()) {
             Ok(token) => {
                 response.insert_header(
-                    HeaderName::from_static("set-cookie"),
-                    HeaderValue::from_str(&format!(
+                    http::header::SET_COOKIE,
+                    http::header::HeaderValue::from_str(&format!(
                         "{}={}; HttpOnly; SameSite=Strict",
                         JWT_COOKIE_KEY, token
                     ))

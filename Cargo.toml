@@ -43,18 +43,18 @@ serde = "1.0.152"
 serde_json = "1.0.93"
 rust-argon2 = { version = "1.0.0", optional = true}
 jsonwebtoken = { version = "8.3.0", optional = true}
-static_init = { version = "1.0.3", optional = true}
 wildmatch = "2.1.1"
 strum_macros = "0.24.3"
 strum = "0.24.1"
 http = "0.2.9"
 cookie = "0.17.0"
 thiserror = "1.0.40"
+lazy_static = "1.4.0"
 
 [features]
 default = ["hydrate"]
 hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate", "dep:wasm-bindgen", "dep:console_log", "dep:console_error_panic_hook"]
-ssr = ["leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:axum", "dep:tower", "dep:tower-http", "dep:futures", "dep:simple_logger", "dep:dotenv", "dep:tracing", "dep:tracing-subscriber", "dep:sqlx", "dep:rust-argon2", "dep:jsonwebtoken", "dep:static_init", "dep:leptos_axum", "dep:tokio"]
+ssr = ["leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:axum", "dep:tower", "dep:tower-http", "dep:futures", "dep:simple_logger", "dep:dotenv", "dep:tracing", "dep:tracing-subscriber", "dep:sqlx", "dep:rust-argon2", "dep:jsonwebtoken", "dep:leptos_axum", "dep:tokio"]
 
 [package.metadata.cargo-all-features]
 denylist = [

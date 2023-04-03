@@ -1,4 +1,3 @@
--- Add migration script here
 CREATE TABLE main_forum (
 	id SERIAL PRIMARY KEY,
 	title TEXT NOT NULL,
@@ -11,6 +10,7 @@ CREATE TABLE forum_user (
 	id SERIAL PRIMARY KEY,
 	username VARCHAR(50) NOT NULL UNIQUE,
 	email VARCHAR(320) NOT NULL UNIQUE,
+	avatar_url VARCHAR(255),
 	password VARCHAR(255) NOT NULL,
 	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -48,4 +48,24 @@ CREATE TABLE thread (
 
 	FOREIGN KEY (creator_id) REFERENCES forum_user(id),
 	FOREIGN KEY (forum_id) REFERENCES forum(id)
+);
+
+CREATE TABLE user_group (
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(255) NOT NULL UNIQUE,
+	user_title VARCHAR(255) NOT NULL UNIQUE,
+	description TEXT
+);
+
+CREATE TABLE permission (
+	name VARCHAR(255) NOT NULL UNIQUE PRIMARY KEY
+);
+
+CREATE TABLE user_group_on_permission(
+	id SERIAL PRIMARY KEY,
+	user_group_id INTEGER NOT NULL,
+	permission_name VARCHAR(255) NOT NULL,
+	value TEXT NOT NULL,
+	FOREIGN KEY(user_group_id) REFERENCES user_group(id),
+	FOREIGN KEY (permission_name) REFERENCES permission(name)
 );

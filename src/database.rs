@@ -49,9 +49,9 @@ cfg_if!(
         /// Creates the default admin user if it doesn't exist.
         async fn init_admin(db_pool: &PgPool) {
             use crate::model::user::ForumUser;
+            use crate::model::user_group::UserGroup;
 
             //  TODO: create a flag to check if the default admin user has been created.
-            //  If the user changes the default admin username, it will just create another one
             match ForumUser::find_by_username(db_pool, "admin").await {
                 Ok(_) => tracing::info!("The default admin user already exists."),
                 Err(e) => {
@@ -60,7 +60,7 @@ cfg_if!(
                             tracing::info!("Default admin user not found. Creating it now.");
                             //  TODO: move the default admin credentials to a config file
                             let hashed_pass = HashedString::new(crate::global::ARGON2_SALT.as_ref(), "admin").unwrap();
-                            if let Err(e) = ForumUser::create(db_pool, "admin", "admin@mail.com", hashed_pass).await {
+                            if let Err(e) = ForumUser::create(db_pool, "admin", "admin@mail.com", hashed_pass, "Admin").await {
                                 tracing::error!("Couldn't create the default admin user :( {}", e);
                             }
                         }
@@ -103,7 +103,7 @@ cfg_if!(
             let groups = UserGroup::select_all(db_pool).await.expect("Couldn't select the groups");
             let entries = PERMISSION_ENTRIES.clone();
             for group in groups {
-                UserGroupOnPermission::insert_default_entries_for_group(db_pool, group.id, &entries).await;
+                UserGroupOnPermission::insert_default_entries_for_group(db_pool, &group.id, &entries).await;
             }
         }
 
@@ -114,7 +114,7 @@ cfg_if!(
             init_default_groups(&db_pool).await;
             init_default_permissions(&db_pool).await;
             seed_entries_for_groups(&db_pool).await;
-            //init_admin(&db_pool).await;
+            init_admin(&db_pool).await;
         }
     }
 );

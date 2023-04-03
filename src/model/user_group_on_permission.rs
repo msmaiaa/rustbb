@@ -5,7 +5,7 @@ use crate::permission_entries::StaticPermissionEntries;
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct UserGroupOnPermission {
     pub id: i32,
-    pub user_group_id: i32,
+    pub user_group_id: String,
     pub permission_id: String,
     pub value: String,
 }
@@ -14,7 +14,7 @@ pub struct UserGroupOnPermission {
 impl UserGroupOnPermission {
     pub async fn insert_default_entries_for_group(
         pool: &sqlx::Pool<sqlx::Postgres>,
-        user_group_id: i32,
+        user_group_id: &str,
         permissions: &StaticPermissionEntries,
     ) -> Result<(), sqlx::Error> {
         use crate::model::permission::Permission;
@@ -36,7 +36,7 @@ impl UserGroupOnPermission {
 
     pub async fn create(
         pool: &sqlx::Pool<sqlx::Postgres>,
-        user_group_id: i32,
+        user_group_id: &str,
         permission_id: String,
         value: String,
     ) -> Result<sqlx::postgres::PgQueryResult, sqlx::Error> {
@@ -55,7 +55,7 @@ impl UserGroupOnPermission {
 
     pub async fn create_ignore(
         pool: &sqlx::Pool<sqlx::Postgres>,
-        user_group_id: i32,
+        user_group_id: &str,
         permission_id: String,
         value: String,
     ) -> Result<sqlx::postgres::PgQueryResult, sqlx::Error> {

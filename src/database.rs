@@ -1,6 +1,6 @@
-use cfg_if::cfg_if;
-
 use crate::auth::HashedString;
+use crate::permission_entries::PERMISSION_ENTRIES;
+use cfg_if::cfg_if;
 
 cfg_if!(
     if #[cfg(feature = "ssr")] {
@@ -72,11 +72,49 @@ cfg_if!(
             }
         }
 
+        async fn init_default_permissions(db_pool: &PgPool) {
+            use crate::model::permission::Permission;
+            let mut query = "INSERT INTO permission (id, label) VALUES ".to_string();
+            let entries = PERMISSION_ENTRIES.clone().0;
+            for (i, (id, label, _)) in entries.iter().enumerate() {
+                let last_char = match i == entries.len() - 1 {
+                    true => ' ',
+                    false => ',',
+                };
+                query = query + &format!("('{}', '{}'){}", id, label, last_char);
+            }
+            query = query + "ON CONFLICT DO NOTHING;";
+            sqlx::query(&query).execute(db_pool).await.expect("Couldn't insert the default permissions");
+        }
+
+        async fn init_default_groups(db_pool: &PgPool) {
+            use crate::model::user_group::UserGroup;
+
+            //  TODO: same thing as above, create a flag to check if the default groups and permissions have been created.
+            UserGroup::create_if_not_exists(db_pool, "Admin", "Administrator", Some("Administrators have full control over the forum.".to_string())).await.expect("Couldn't create the Admin group");
+            UserGroup::create_if_not_exists(db_pool, "Moderator", "Moderator", Some("Moderators have control over the forum.".to_string())).await.expect("Couldn't create the Moderator group");
+            UserGroup::create_if_not_exists(db_pool, "Member", "Member", Some("Members are regular users.".to_string())).await.expect("Couldn't create the Member group");
+            UserGroup::create_if_not_exists(db_pool, "Unconfirmed", "Unconfirmed", Some("A user that has a pending email confirmation.".to_string())).await.expect("Couldn't create the Unconfirmed group");
+        }
+
+        async fn seed_entries_for_groups(db_pool: &PgPool) {
+            use crate::model::user_group_on_permission::UserGroupOnPermission;
+            use crate::model::user_group::UserGroup;
+            let groups = UserGroup::select_all(db_pool).await.expect("Couldn't select the groups");
+            let entries = PERMISSION_ENTRIES.clone();
+            for group in groups {
+                UserGroupOnPermission::insert_default_entries_for_group(db_pool, group.id, &entries).await;
+            }
+        }
+
         pub async fn setup() {
             let db_pool = get_db_pool().await.expect("Couldn't connect to the database");
             migrate(&db_pool).await;
             init_forum(&db_pool).await;
-            init_admin(&db_pool).await;
+            init_default_groups(&db_pool).await;
+            init_default_permissions(&db_pool).await;
+            seed_entries_for_groups(&db_pool).await;
+            //init_admin(&db_pool).await;
         }
     }
 );

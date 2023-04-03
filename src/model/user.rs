@@ -9,6 +9,7 @@ pub struct ForumUser {
     pub username: String,
     pub email: String,
     pub password: String,
+    pub user_group_id: i32,
     pub avatar_url: Option<String>,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,

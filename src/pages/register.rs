@@ -98,6 +98,6 @@ pub async fn register_user(
         }
     };
 
-    let created_user = ForumUser::create(&db, &username, &email, hashed_pass).await;
+    let created_user = ForumUser::create(&db, &username, &email, hashed_pass, "Member").await;
     Ok(())
 }

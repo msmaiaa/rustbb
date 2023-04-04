@@ -9,6 +9,7 @@ pub struct ForumUser {
     pub username: String,
     pub email: String,
     pub password: String,
+    pub user_group_id: String,
     pub avatar_url: Option<String>,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
@@ -28,15 +29,16 @@ cfg_if!(
                 .fetch_one(pool).await
             }
 
-            pub async fn create(pool: &sqlx::Pool<sqlx::Postgres>, username: &str, email: &str, password: HashedString) -> Result<sqlx::postgres::PgQueryResult, sqlx::Error> {
+            pub async fn create(pool: &sqlx::Pool<sqlx::Postgres>, username: &str, email: &str, password: HashedString, user_group_id: &str) -> Result<sqlx::postgres::PgQueryResult, sqlx::Error> {
                 sqlx::query!(
                     r#"
-                    INSERT INTO forum_user (username, email, password)
-                    VALUES ($1, $2, $3)
+                    INSERT INTO forum_user (username, email, password, user_group_id)
+                    VALUES ($1, $2, $3, $4)
                     "#,
                     username,
                     email,
-                    password.as_ref()
+                    password.as_ref(),
+                    user_group_id
                 )
                 .execute(pool).await
             }

@@ -1,4 +1,3 @@
--- Add migration script here
 CREATE TABLE main_forum (
 	id SERIAL PRIMARY KEY,
 	title TEXT NOT NULL,
@@ -7,13 +6,37 @@ CREATE TABLE main_forum (
 
 CREATE UNIQUE INDEX main_forum_unique ON main_forum ((true));
 
+
+CREATE TABLE user_group (
+	id VARCHAR(255) NOT NULL UNIQUE PRIMARY KEY,
+	user_title VARCHAR(255) NOT NULL UNIQUE,
+	description TEXT
+);
+
+CREATE TABLE permission (
+	id VARCHAR(255) NOT NULL UNIQUE PRIMARY KEY,
+	label VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE user_group_on_permission(
+	id SERIAL PRIMARY KEY,
+	user_group_id VARCHAR(255) NOT NULL,
+	permission_id VARCHAR(255) NOT NULL,
+	value TEXT NOT NULL,
+	FOREIGN KEY(user_group_id) REFERENCES user_group(id),
+	FOREIGN KEY (permission_id) REFERENCES permission(id)
+);
+
 CREATE TABLE forum_user (
 	id SERIAL PRIMARY KEY,
 	username VARCHAR(50) NOT NULL UNIQUE,
 	email VARCHAR(320) NOT NULL UNIQUE,
+	avatar_url VARCHAR(255),
+	user_group_id VARCHAR(255) NOT NULL,
 	password VARCHAR(255) NOT NULL,
 	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (user_group_id) REFERENCES user_group(id)
 );
 
 CREATE TABLE category (

@@ -7,6 +7,7 @@ mod error_template;
 mod global;
 mod model;
 mod pages;
+mod permission_entries;
 use cfg_if::cfg_if;
 
 cfg_if! {

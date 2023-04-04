@@ -30,7 +30,6 @@ if #[cfg(feature = "ssr")]{
     #[derive(Serialize, Deserialize, Debug)]
     pub struct AccessToken {
         pub user_id: i32,
-        pub iat: i64,
         pub exp: i64,
     }
 
@@ -38,12 +37,11 @@ if #[cfg(feature = "ssr")]{
         let iat = chrono::Utc::now();
         //  TODO: get the expiration time from a environment variable
         let exp = iat + chrono::Duration::seconds(3600);
-        let iat = iat.timestamp_millis();
-        let exp = exp.timestamp_millis();
+        let exp = exp.timestamp();
 
         let key =
             EncodingKey::from_secret(jwt_key.as_bytes());
-        let claims = AccessToken { user_id, iat, exp };
+        let claims = AccessToken { user_id, exp };
         let header = Header::new(Algorithm::HS256);
         encode(&header, &claims, &key)
     }

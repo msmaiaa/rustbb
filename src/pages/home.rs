@@ -28,9 +28,7 @@ pub fn Home(cx: Scope) -> impl IntoView {
                             />
                         </div>
                     },
-                    None =>
-                    view! {
-                        cx,
+                    None => view! {cx,
                         <div/>
                     }
                 }}
@@ -142,32 +140,33 @@ pub async fn get_home_data() -> Result<Vec<CategoryWithForums>, ServerFnError> {
     )
     .fetch_one(&conn)
     .await;
-    match query_result {
-        Ok(res) => {
-            let data: Result<Vec<CategoryWithForums>, ServerFnError> = match res.result {
-                Some(data) => data,
-                None => return Ok(vec![]),
-            }
-            .as_array()
-            .ok_or(ServerFnError::ServerError(
-                "Internal server error".to_string(),
-            ))?
-            .into_iter()
-            .map(|x| {
-                serde_json::from_value::<CategoryWithForums>(x.clone()).map_err(|e| {
-                    tracing::error!(
-                        "Error serializing CategoryWithForums from the database rows: {}",
-                        e.to_string()
-                    );
-                    ServerFnError::ServerError("Internal server error".to_string())
-                })
-            })
-            .collect();
-            return data;
-        }
+
+    let query_result = match query_result {
+        Ok(res) => res,
         Err(e) => {
             tracing::error!("Couldn't fetch the categories and its forums: {:#?}", e);
+            return Ok(vec![]);
         }
+    };
+
+    let data: Result<Vec<CategoryWithForums>, ServerFnError> = match query_result.result {
+        Some(data) => data,
+        None => return Ok(vec![]),
     }
-    Ok(vec![])
+    .as_array()
+    .ok_or(ServerFnError::ServerError(
+        "Internal server error".to_string(),
+    ))?
+    .into_iter()
+    .map(|x| {
+        serde_json::from_value::<CategoryWithForums>(x.clone()).map_err(|e| {
+            tracing::error!(
+                "Error serializing CategoryWithForums from the database rows: {}",
+                e.to_string()
+            );
+            ServerFnError::ServerError("Internal server error".to_string())
+        })
+    })
+    .collect();
+    return data;
 }

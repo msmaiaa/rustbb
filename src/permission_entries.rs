@@ -18,29 +18,13 @@ lazy_static! {
         ("thread.create", "Create threads", ValueType::Boolean),
         ("thread.edit", "Edit own threads", ValueType::Boolean),
         ("thread.delete", "Delete own threads", ValueType::Boolean),
-        (
-            "thread.edit_any",
-            "Edit threads from any user",
-            ValueType::Boolean,
-        ),
-        (
-            "thread.delete_any",
-            "Delete threads from any user",
-            ValueType::Boolean,
-        ),
+        ("thread.edit_any", "Edit threads from any user", ValueType::Boolean),
+        ("thread.delete_any", "Delete threads from any user", ValueType::Boolean),
         ("thread.move_any", "Move threads", ValueType::Boolean),
         ("thread.approve", "Approve threads", ValueType::Boolean),
         ("thread.delete", "Delete threads", ValueType::Boolean),
-        (
-            "thread.subscribe",
-            "Subscribe to threads",
-            ValueType::Boolean,
-        ),
-        (
-            "thread.unsubscribe",
-            "Unsubscribe from threads",
-            ValueType::Boolean,
-        ),
+        ("thread.subscribe", "Subscribe to threads", ValueType::Boolean),
+        ("thread.unsubscribe", "Unsubscribe from threads", ValueType::Boolean),
         ("category.create", "Create categories", ValueType::Boolean),
         ("category.edit", "Edit categories", ValueType::Boolean),
         ("category.delete", "Delete categories", ValueType::Boolean),
@@ -49,16 +33,8 @@ lazy_static! {
         ("forum.delete", "Delete forums", ValueType::Boolean),
         ("post.create", "Create posts", ValueType::Boolean),
         ("post.edit", "Edit own post", ValueType::Boolean),
-        (
-            "post.edit_any",
-            "Edit posts from any user",
-            ValueType::Boolean,
-        ),
+        ("post.edit_any", "Edit posts from any user", ValueType::Boolean),
         ("post.delete", "Delete own posts", ValueType::Boolean),
-        (
-            "post.delete_any",
-            "Delete posts from any user",
-            ValueType::Boolean,
-        ),
+        ("post.delete_any", "Delete posts from any user", ValueType::Boolean),
     ]);
 }

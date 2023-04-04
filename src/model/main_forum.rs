@@ -10,36 +10,36 @@ pub struct MainForum {
 }
 
 cfg_if! {
-    if #[cfg(feature = "ssr")] {
-        impl MainForum {
-            pub async fn get_main_forum(pool: &sqlx::Pool<sqlx::Postgres>) -> Result<MainForum, sqlx::Error> {
-                let forum = sqlx::query_as!(
-                    MainForum,
-                    r#"
-                        SELECT id, title, created_at
-                        FROM main_forum
-                        LIMIT 1
-                    "#
-                )
-                .fetch_one(pool)
-                .await?;
-                Ok(forum)
-            }
+if #[cfg(feature = "ssr")] {
+    impl MainForum {
+        pub async fn get_main_forum(pool: &sqlx::Pool<sqlx::Postgres>) -> Result<MainForum, sqlx::Error> {
+            let forum = sqlx::query_as!(
+                MainForum,
+                r#"
+                    SELECT id, title, created_at
+                    FROM main_forum
+                    LIMIT 1
+                "#
+            )
+            .fetch_one(pool)
+            .await?;
+            Ok(forum)
+        }
 
-            pub async fn create(pool: &sqlx::Pool<sqlx::Postgres>, title: &str) -> Result<MainForum, sqlx::Error> {
-                let forum = sqlx::query_as!(
-                    MainForum,
-                    r#"
-                        INSERT INTO main_forum (title)
-                        VALUES ($1)
-                        RETURNING id, title, created_at
-                    "#,
-                    title
-                )
-                .fetch_one(pool)
-                .await?;
-                Ok(forum)
-            }
+        pub async fn create(pool: &sqlx::Pool<sqlx::Postgres>, title: &str) -> Result<MainForum, sqlx::Error> {
+            let forum = sqlx::query_as!(
+                MainForum,
+                r#"
+                    INSERT INTO main_forum (title)
+                    VALUES ($1)
+                    RETURNING id, title, created_at
+                "#,
+                title
+            )
+            .fetch_one(pool)
+            .await?;
+            Ok(forum)
         }
     }
+}
 }

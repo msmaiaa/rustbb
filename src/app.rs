@@ -100,11 +100,6 @@ pub fn App(cx: Scope) -> impl IntoView {
         }
     });
 
-    create_effect(cx, move |_| match user_data.get() {
-        Some(_) => log!("User logged in"),
-        None => log!("User not logged in"),
-    });
-
     view! {
         cx,
         <Stylesheet id="leptos" href="/pkg/rustbb.css"/>

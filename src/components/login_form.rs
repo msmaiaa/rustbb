@@ -109,7 +109,7 @@ pub async fn login(
         Ok(user) => user,
     };
 
-    let hashed_pass = match hash(global::ARGON2_SALT.as_ref(), &password) {
+    let hashed_pass = match hash_str(global::ARGON2_SALT.as_ref(), &password) {
         Ok(h) => h,
         Err(e) => return server_error!(e),
     };

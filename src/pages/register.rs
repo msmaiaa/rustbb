@@ -89,8 +89,7 @@ pub async fn register_user(
         }
     }
 
-    let hashed_pass;
-    hashed_pass = match HashedString::new(&global::ARGON2_SALT.clone(), &password) {
+    let hashed_pass = match HashedString::new(&global::ARGON2_SALT.clone(), &password) {
         Ok(h) => h,
         Err(e) => {
             tracing::error!("Error while trying to hash password: {e}");

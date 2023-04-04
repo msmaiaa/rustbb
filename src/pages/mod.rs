@@ -48,12 +48,9 @@ impl Page {
             let path_with_wc = page
                 .path()
                 .split("/")
-                .map(|part| {
-                    if part.starts_with(":") {
-                        "*".to_string()
-                    } else {
-                        part.to_string()
-                    }
+                .map(|part| match part.starts_with(":") {
+                    true => "*".to_string(),
+                    false => part.to_string(),
                 })
                 .collect::<Vec<_>>()
                 .join("/");

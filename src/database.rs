@@ -14,7 +14,8 @@ if #[cfg(feature = "ssr")] {
     pub async fn setup() -> PgPool {
         let db_pool = get_db_pool().await.expect("Couldn't connect to the database");
         migrate(&db_pool).await;
-        init_forum(&db_pool).await;
+        init_main_forum(&db_pool).await;
+        init_category_and_forum(&db_pool).await;
         init_default_groups(&db_pool).await;
         init_default_permissions(&db_pool).await;
         seed_entries_for_groups(&db_pool).await;
@@ -41,10 +42,30 @@ if #[cfg(feature = "ssr")] {
         };
     }
 
+    async fn init_category_and_forum(db_pool: &PgPool) {
+        use crate::model::{category::Category, forum::Forum};
+        let is_empty = match Category::is_empty(db_pool).await {
+            Ok(exists) => exists,
+            Err(e) => {
+                tracing::error!("Error while querying for categories: {}", e);
+                return ();
+            }
+        };
+
+        if is_empty {
+            let category = match Category::create(db_pool, "Main category", 1).await {
+                Ok(category) => category,
+                Err(e) => {
+                    tracing::error!("Error while creating the default category: {}", e);
+                    return ();
+                }
+            };
+        }
+    }
 
     /// Creates the main forum row if it doesn't exist.
     /// The main forum is a table with a single row that contains configuration data for the website.
-    async fn init_forum(db_pool: &PgPool) {
+    async fn init_main_forum(db_pool: &PgPool) {
         use crate::model::main_forum::MainForum;
 
         match MainForum::get_main_forum(db_pool).await {

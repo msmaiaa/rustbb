@@ -36,7 +36,7 @@ if #[cfg(feature = "ssr")]{
     pub fn generate_access_token(user_id: i32, jwt_key: &str) -> Result<String, JwtError> {
         let iat = chrono::Utc::now();
         //  TODO: get the expiration time from a environment variable
-        let exp = iat + chrono::Duration::seconds(3600);
+        let exp = iat + chrono::Duration::weeks(1);
         let exp = exp.timestamp();
 
         let key =

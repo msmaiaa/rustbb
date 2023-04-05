@@ -50,6 +50,7 @@ http = "0.2.9"
 cookie = "0.17.0"
 thiserror = "1.0.40"
 lazy_static = "1.4.0"
+slug = "0.1.4"
 
 [features]
 default = ["hydrate"]

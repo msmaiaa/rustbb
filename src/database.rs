@@ -60,6 +60,11 @@ if #[cfg(feature = "ssr")] {
                     return ();
                 }
             };
+
+            match Forum::create(db_pool, "Main forum", &slug::slugify("Main forum"), category.id).await {
+                Ok(_) => tracing::info!("The default category and forum were created successfully."),
+                Err(e) => tracing::error!("Error while creating the default forum: {}", e),
+            }
         }
     }
 

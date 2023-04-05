@@ -14,7 +14,7 @@ fn get_forum_page() -> (Forum, Vec<Thread>) {
     let mock_forum = Forum {
         id: 1,
         title: "mock forum".to_string(),
-        description: "mock forum description".to_string(),
+        description: Some("mock forum description".to_string()),
         slug: "mock-forum".to_string(),
         category_id: 1,
         created_at: chrono::NaiveDateTime::from_timestamp(0, 0),

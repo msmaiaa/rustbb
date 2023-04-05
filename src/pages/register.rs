@@ -10,7 +10,8 @@ pub fn Register(cx: Scope) -> impl IntoView {
     let try_register_user = create_action(cx, move |payload: &RegisterUserPayload| {
         let payload = payload.to_owned();
         async move {
-            let response = register_user(payload.username, payload.email, payload.password).await;
+            let response =
+                register_user(cx, payload.username, payload.email, payload.password).await;
             match response {
                 Ok(_) => {
                     set_success("Successfully registered".to_string());
@@ -68,17 +69,18 @@ pub struct RegisterUserPayload {
 //  for some reason it errors when i send a struct instead of primitives
 #[server(RegisterUser, "/api")]
 pub async fn register_user(
+    cx: Scope,
     username: String,
     email: String,
     password: String,
 ) -> Result<(), ServerFnError> {
     use crate::auth::*;
-    use crate::database::get_db_pool;
+    use crate::database::get_db;
     use crate::error::server_error;
     use crate::global;
     use crate::model::user::*;
 
-    let db = get_db_pool().await.unwrap();
+    let db = get_db(cx)?;
     let found_user = ForumUser::find_by_username_or_email(&db, &username, &email).await;
     if let Ok(u) = found_user {
         if u.username == username {

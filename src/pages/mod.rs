@@ -29,10 +29,13 @@ impl Page {
     }
 
     #[cfg(feature = "ssr")]
-    pub fn preload_fn(&self) -> Option<impl Future<Output = impl Fn(Scope) + Clone>> {
+    pub fn preload_fn(
+        &self,
+        pool: sqlx::Pool<sqlx::Postgres>,
+    ) -> Option<impl Future<Output = impl Fn(Scope) + Clone>> {
         match self {
             Page::Home => Some(async {
-                let home_data = crate::pages::home::get_home_data().await.unwrap();
+                let home_data = crate::pages::home::get_home_data(pool).await.unwrap();
                 return move |cx| {
                     provide_context(cx, home_data.clone());
                 };

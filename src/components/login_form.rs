@@ -89,12 +89,12 @@ pub async fn login(
     password: String,
 ) -> Result<LoginResponse, ServerFnError> {
     use crate::auth::*;
-    use crate::database::get_db_pool;
+    use crate::database::get_db;
     use crate::error::server_error;
     use crate::global;
     use crate::model::user::*;
 
-    let db = get_db_pool().await.unwrap();
+    let db = get_db(cx)?;
 
     let response = match use_context::<leptos_axum::ResponseOptions>(cx) {
         Some(r) => r,

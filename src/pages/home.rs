@@ -95,9 +95,10 @@ pub struct CategoryWithForums {
 }
 
 #[cfg(feature = "ssr")]
-pub async fn get_home_data() -> Result<Vec<CategoryWithForums>, ServerFnError> {
+pub async fn get_home_data(
+    pool: sqlx::Pool<sqlx::Postgres>,
+) -> Result<Vec<CategoryWithForums>, ServerFnError> {
     use crate::error::server_error;
-    let mut conn = crate::database::get_db_pool().await.unwrap();
 
     //  retrieves all categories and their forums
     let query_result = sqlx::query!(
@@ -138,7 +139,7 @@ pub async fn get_home_data() -> Result<Vec<CategoryWithForums>, ServerFnError> {
         ) AS forums ON category.id = forums.category_id
         "#
     )
-    .fetch_one(&conn)
+    .fetch_one(&pool)
     .await;
 
     let query_result = match query_result {

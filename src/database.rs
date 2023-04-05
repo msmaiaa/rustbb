@@ -1,4 +1,5 @@
 use cfg_if::cfg_if;
+use leptos::use_context;
 
 cfg_if! {
 if #[cfg(feature = "ssr")] {
@@ -9,8 +10,26 @@ if #[cfg(feature = "ssr")] {
 
     type PgPool = Pool<Postgres>;
 
+
+    pub async fn setup() -> PgPool {
+        let db_pool = get_db_pool().await.expect("Couldn't connect to the database");
+        migrate(&db_pool).await;
+        init_forum(&db_pool).await;
+        init_default_groups(&db_pool).await;
+        init_default_permissions(&db_pool).await;
+        seed_entries_for_groups(&db_pool).await;
+        init_admin(&db_pool).await;
+        db_pool
+    }
+
     pub async fn get_db_pool() -> Result<PgPool, sqlx::error::Error> {
         PgPoolOptions::new().connect(global::DATABASE_URL.as_ref()).await
+    }
+
+    pub fn get_db(cx: leptos::Scope) -> Result<PgPool, leptos::ServerFnError> {
+        use_context::<PgPool>(cx)
+        .ok_or("Missing db pool")
+        .map_err(|e| leptos::ServerFnError::ServerError(e.to_string()))
     }
 
     async fn migrate(db_pool: &PgPool) {
@@ -105,16 +124,6 @@ if #[cfg(feature = "ssr")] {
         for group in groups {
             UserGroupOnPermission::insert_default_entries_for_group(db_pool, &group.id, &entries).await;
         }
-    }
-
-    pub async fn setup() {
-        let db_pool = get_db_pool().await.expect("Couldn't connect to the database");
-        migrate(&db_pool).await;
-        init_forum(&db_pool).await;
-        init_default_groups(&db_pool).await;
-        init_default_permissions(&db_pool).await;
-        seed_entries_for_groups(&db_pool).await;
-        init_admin(&db_pool).await;
     }
 }
 }

@@ -24,6 +24,7 @@ pub struct GetCurrentUserResponse {
 #[server(GetCurrentUser, "/api")]
 pub async fn get_current_user(cx: Scope) -> Result<GetCurrentUserResponse, ServerFnError> {
     use crate::auth::*;
+    use crate::database::get_db;
     use crate::error::server_error;
 
     let req = match use_context::<leptos_axum::LeptosRequest<axum::body::Body>>(cx) {
@@ -61,18 +62,14 @@ pub async fn get_current_user(cx: Scope) -> Result<GetCurrentUserResponse, Serve
         Err(e) => return server_error!(e),
     };
 
-    let user = match crate::model::user::ForumUser::find_by_id(
-        &crate::database::get_db_pool().await.unwrap(),
-        token_data.user_id,
-    )
-    .await
-    {
-        Ok(user) => user,
-        Err(e) => match e {
-            sqlx::Error::RowNotFound => return server_error!("User not found"),
-            _ => return server_error!("Internal server error"),
-        },
-    };
+    let user =
+        match crate::model::user::ForumUser::find_by_id(&get_db(cx)?, token_data.user_id).await {
+            Ok(user) => user,
+            Err(e) => match e {
+                sqlx::Error::RowNotFound => return server_error!("User not found"),
+                _ => return server_error!("Internal server error"),
+            },
+        };
 
     return Ok(GetCurrentUserResponse {
         username: user.username,

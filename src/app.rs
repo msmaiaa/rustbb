@@ -35,7 +35,9 @@ pub async fn get_current_user(cx: Scope) -> Result<GetCurrentUserResponse, Serve
     let cookies = req
         .headers()
         .get(http::header::COOKIE)
-        .unwrap()
+        .ok_or(ServerFnError::ServerError(
+            "Couldn't get the request's cookies.".to_string(),
+        ))?
         .to_str()
         .ok()
         .map(|cookies| cookies.to_owned())

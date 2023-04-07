@@ -19,32 +19,27 @@ pub enum Page {
 }
 
 impl Page {
-    pub fn path(&self) -> String {
+    pub fn path(&self) -> &'static str {
         match self {
-            Page::Home => "/".to_string(),
-            Page::Forum => "/forum/:id".to_string(),
-            Page::Login => "/login".to_string(),
-            Page::Register => "/register".to_string(),
+            Page::Home => "/",
+            Page::Forum => "/forum/:id",
+            Page::Login => "/login",
+            Page::Register => "/register",
         }
     }
 
-    #[cfg(feature = "ssr")]
-    pub fn preload_fn(
-        &self,
-        pool: sqlx::Pool<sqlx::Postgres>,
-    ) -> Option<impl Future<Output = impl Fn(Scope) + Clone>> {
-        match self {
-            Page::Home => Some(async {
-                let home_data = crate::pages::home::get_home_data(pool).await.unwrap();
-                return move |cx| {
-                    provide_context(cx, home_data.clone());
-                };
-            }),
-            Page::Forum => None,
-            Page::Login => None,
-            Page::Register => None,
-        }
-    }
+    // #[cfg(feature = "ssr")]
+    // pub fn preload_fn(
+    //     &self,
+    //     pool: sqlx::Pool<sqlx::Postgres>,
+    // ) -> Option<impl Future<Output = impl Fn(Scope) + Clone>> {
+    //     match self {
+    //         Page::Home => None::<_>,
+    //         Page::Forum => None,
+    //         Page::Login => None,
+    //         Page::Register => None,
+    //     }
+    // }
 
     pub fn from_uri(uri: &str) -> Option<Page> {
         Page::iter().find(|page| {

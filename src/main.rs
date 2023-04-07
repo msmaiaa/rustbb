@@ -10,6 +10,7 @@ mod model;
 mod pages;
 mod permission_entries;
 use cfg_if::cfg_if;
+use leptos::provide_context;
 
 cfg_if! {
 if #[cfg(feature = "ssr")] {
@@ -19,7 +20,7 @@ if #[cfg(feature = "ssr")] {
     use axum::{
         response::{Response, IntoResponse},
         routing::{post, get},
-        extract::{Path, Extension},
+        extract::{Path, Extension, RawQuery},
         http::{Request, header::HeaderMap, Uri},
         body::Body as AxumBody,
         Router,
@@ -31,13 +32,16 @@ if #[cfg(feature = "ssr")] {
     fn register_server_functions() {
         use crate::pages::register::RegisterUser;
         use crate::components::login_form::Login;
+        use crate::pages::home::GetHomeData;
+
+        _ = GetHomeData::register();
         _ = RegisterUser::register();
         _ = Login::register();
         _ = GetCurrentUser::register();
     }
 
-    async fn server_fn_handler(Extension(pool): Extension<sqlx::Pool<sqlx::Postgres>>, path: Path<String>, headers: HeaderMap, request: Request<AxumBody>) -> impl IntoResponse {
-        handle_server_fns_with_context(path, headers, move |cx| {
+    async fn server_fn_handler(Extension(pool): Extension<sqlx::Pool<sqlx::Postgres>>, path: Path<String>, headers: HeaderMap, raw_query: RawQuery, request: Request<AxumBody>) -> impl IntoResponse {
+        handle_server_fns_with_context(path, headers, raw_query, move |cx| {
             provide_context(cx, pool.clone());
         }, request).await
     }
@@ -52,18 +56,18 @@ if #[cfg(feature = "ssr")] {
     }
 
     async fn frontend_routes_handler(Extension(pool): Extension<sqlx::Pool<sqlx::Postgres>>, Extension(options): Extension<Arc<LeptosOptions>>, uri: Uri, req: Request<AxumBody>) -> Response{
-        let uri = uri.clone();
-        for page in crate::pages::Page::iter() {
-            if uri.path().eq(&page.path()) {
-                if let Some(f) = page.preload_fn(pool.clone()) {
-                    let cb = f.await;
-                    return render_frontend(req, options, move |cx| {
-                        cb(cx);
-                    }).await;
-                }
-            }
-        }
-        return render_frontend(req, options, move |_| {}).await;
+        // let uri = uri.clone();
+        // for page in crate::pages::Page::iter() {
+        //     if uri.path().eq(page.path()) {
+        //         if let Some(f) = page.preload_fn(pool.clone()) {
+        //             let cb = f.await;
+        //             return render_frontend(req, options, move |cx| {
+        //                 cb(cx);
+        //             }).await;
+        //         }
+        //     }
+        // }
+        return render_frontend(req, options, move |cx| {}).await;
     }
 
     #[tokio::main]

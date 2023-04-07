@@ -1,23 +1,21 @@
+use crate::components::link::*;
 use crate::model::{category::Category, forum::*};
 use leptos::*;
 use leptos_router::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-pub struct Teste {
-    pub member: i32,
-}
-
 #[component]
 pub fn Home(cx: Scope) -> impl IntoView {
-    let home_data = use_context::<Vec<CategoryWithForums>>(cx);
-    view! { cx,
-        <div class="h-full w-full">
-            <div class="flex flex-col w-full">
-                {match home_data {
-                    Some(data) => view!{cx,
-                        <div>
-                            <For
+    let home_data = use_context::<Vec<CategoryWithForums>>(cx).unwrap_or(vec![]);
+    let home_data = create_resource(cx, || (), move |_| async move { get_home_data(cx).await });
+
+    let home_view = move |cx| {
+        home_data.read(cx).map(|data| match data {
+            Ok(data) => {
+                view! {cx,
+                    <div class="h-full w-full">
+                        <div class="flex flex-col w-full">
+                        <For
                             each=move || data.clone()
                             key=|n| n.category.id
                             view = move |cx, data| {
@@ -25,16 +23,23 @@ pub fn Home(cx: Scope) -> impl IntoView {
                                     <CategoryCard category={data.category} forums={data.forums}/>
                                 }
                             }
-                            />
+                        />
                         </div>
-                    },
-                    None => view! {cx,
-                        <div/>
-                    }
-                }}
+                    </div>
+                }
+            }
+            Err(e) => {
+                view! {cx,
+                    <div class="h-full w-full">
+                        <p>{e.to_string()}</p>
+                    </div>
+                }
+            }
+        })
+    };
 
-            </div>
-        </div>
+    view! { cx,
+        <Suspense fallback= || ()>{home_view(cx)}</Suspense>
     }
 }
 
@@ -66,12 +71,15 @@ fn CategoryCard(cx: Scope, category: Category, forums: Option<Vec<Forum>>) -> im
 
 #[component]
 fn ForumCard(cx: Scope, forum: Forum) -> impl IntoView {
+    let forum_path = format!("/forum/{}.{}", forum.slug, forum.id);
     view! {cx,
         <div class="bg-neutral-700 rounded-sm shadow-lg p-4 flex">
             <div class="w-3/5">
-                <A href=move || format!("/forum/{}.{}", forum.slug, forum.id)>
-                    <h2 class="text-xl font-bold">{forum.title}</h2>
-                </A>
+                <h2 class="text-xl font-bold">
+                    <RouteLink to=forum_path reload=true>
+                        {forum.title}
+                    </RouteLink>
+                </h2>
                 <p class="text-sm text-text_secondary">{forum.description}</p>
             </div>
             <div class="flex">
@@ -94,11 +102,11 @@ pub struct CategoryWithForums {
     pub forums: Option<Vec<Forum>>,
 }
 
-#[cfg(feature = "ssr")]
-pub async fn get_home_data(
-    pool: sqlx::Pool<sqlx::Postgres>,
-) -> Result<Vec<CategoryWithForums>, ServerFnError> {
+#[server(GetHomeData, "/api")]
+pub async fn get_home_data(cx: Scope) -> Result<Vec<CategoryWithForums>, ServerFnError> {
+    use crate::database::get_db;
     use crate::error::server_error;
+    let pool = get_db(cx).await?;
 
     //  retrieves all categories and their forums
     let query_result = sqlx::query!(

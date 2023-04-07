@@ -94,7 +94,7 @@ pub async fn login(
     use crate::global;
     use crate::model::user::*;
 
-    let db = get_db(cx)?;
+    let db = get_db(cx).await?;
 
     let response = match use_context::<leptos_axum::ResponseOptions>(cx) {
         Some(r) => r,

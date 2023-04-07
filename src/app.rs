@@ -63,7 +63,9 @@ pub async fn get_current_user(cx: Scope) -> Result<GetCurrentUserResponse, Serve
     };
 
     let user =
-        match crate::model::user::ForumUser::find_by_id(&get_db(cx)?, token_data.user_id).await {
+        match crate::model::user::ForumUser::find_by_id(&get_db(cx).await?, token_data.user_id)
+            .await
+        {
             Ok(user) => user,
             Err(e) => match e {
                 sqlx::Error::RowNotFound => return server_error!("User not found"),
@@ -108,6 +110,7 @@ pub fn App(cx: Scope) -> impl IntoView {
             <div class="text-text_primary bg-bg_primary min-h-screen relative">
                 <Header/>
                 <Navbar/>
+
                 <Layout>
                     <Routes>
                         <Route path={Page::Home.path()} view=move |cx| view! { cx, <Home/> }/>

@@ -27,10 +27,10 @@ if #[cfg(feature = "ssr")] {
         PgPoolOptions::new().connect(global::DATABASE_URL.as_ref()).await
     }
 
-    pub fn get_db(cx: leptos::Scope) -> Result<PgPool, leptos::ServerFnError> {
-        use_context::<PgPool>(cx)
-        .ok_or("Missing db pool")
-        .map_err(|e| leptos::ServerFnError::ServerError(e.to_string()))
+    pub async fn get_db(cx: leptos::Scope) -> Result<PgPool, leptos::ServerFnError> {
+        let pool = use_context::<PgPool>(cx)
+        .unwrap_or(get_db_pool().await.map_err(|e| leptos::ServerFnError::ServerError(e.to_string()))?);
+        Ok(pool)
     }
 
     async fn migrate(db_pool: &PgPool) {

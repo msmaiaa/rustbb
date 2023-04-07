@@ -80,7 +80,7 @@ pub async fn register_user(
     use crate::global;
     use crate::model::user::*;
 
-    let db = get_db(cx)?;
+    let db = get_db(cx).await?;
     let found_user = ForumUser::find_by_username_or_email(&db, &username, &email).await;
     if let Ok(u) = found_user {
         if u.username == username {

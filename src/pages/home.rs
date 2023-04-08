@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 
 #[component]
 pub fn Home(cx: Scope) -> impl IntoView {
-    let home_data = use_context::<Vec<CategoryWithForums>>(cx).unwrap_or(vec![]);
     let home_data = create_resource(cx, || (), move |_| async move { get_home_data(cx).await });
 
     let home_view = move |cx| {

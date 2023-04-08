@@ -33,11 +33,13 @@ if #[cfg(feature = "ssr")] {
         use crate::pages::register::RegisterUser;
         use crate::components::login_form::Login;
         use crate::pages::home::GetHomeData;
+        use crate::pages::forum::GetForumPageData;
 
         _ = GetHomeData::register();
         _ = RegisterUser::register();
         _ = Login::register();
         _ = GetCurrentUser::register();
+        _ = GetForumPageData::register();
     }
 
     async fn server_fn_handler(Extension(pool): Extension<sqlx::Pool<sqlx::Postgres>>, path: Path<String>, headers: HeaderMap, raw_query: RawQuery, request: Request<AxumBody>) -> impl IntoResponse {

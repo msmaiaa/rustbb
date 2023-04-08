@@ -18,6 +18,7 @@ cfg_if! {
             exists: Option<bool>
         }
         impl Category {
+            #[allow(dead_code)]
             pub async fn find_by_id(db_pool: &Pool<Postgres>, category_id: i32) -> Result<Category, sqlx::Error> {
                 sqlx::query_as!(
                     Category,
@@ -30,6 +31,7 @@ cfg_if! {
                 .await
             }
 
+            #[allow(dead_code)]
             pub async fn is_empty(db_pool: &Pool<Postgres>) -> Result<bool, sqlx::Error> {
                 Ok(sqlx::query_as!(Exists,
                     r#"
@@ -43,6 +45,7 @@ cfg_if! {
                 .unwrap_or(false))
             }
 
+            #[allow(dead_code)]
             pub async fn create(db_pool: &Pool<Postgres>, title: &str, creator_id: i32) -> Result<Category, sqlx::Error> {
                 sqlx::query_as!(
                     Category,
@@ -58,6 +61,7 @@ cfg_if! {
                 .await
             }
 
+            #[allow(dead_code)]
             pub async fn create_with_desc(db_pool: &Pool<Postgres>, title: &str, description: &str, creator_id: i32) -> Result<Category, sqlx::Error> {
                 sqlx::query_as!(
                     Category,

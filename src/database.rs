@@ -1,11 +1,12 @@
+#![allow(unused)]
 use cfg_if::cfg_if;
-use leptos::use_context;
 
 cfg_if! {
 if #[cfg(feature = "ssr")] {
     use crate::global;
     use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
     use crate::auth::HashedString;
+    use leptos::use_context;
     use crate::permission_entries::PERMISSION_ENTRIES;
 
     type PgPool = Pool<Postgres>;
@@ -148,7 +149,7 @@ if #[cfg(feature = "ssr")] {
         let groups = UserGroup::select_all(db_pool).await.expect("Couldn't select the groups");
         let entries = PERMISSION_ENTRIES.clone();
         for group in groups {
-            UserGroupOnPermission::insert_default_entries_for_group(db_pool, &group.id, &entries).await;
+            let _ = UserGroupOnPermission::insert_default_entries_for_group(db_pool, &group.id, &entries).await;
         }
     }
 }

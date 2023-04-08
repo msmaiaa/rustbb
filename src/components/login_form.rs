@@ -6,8 +6,6 @@ use leptos::*;
 use serde::Deserialize;
 use serde::Serialize;
 
-const JWT_COOKIE_KEY: &str = "auth_token";
-
 #[component]
 pub fn LoginForm(cx: Scope) -> impl IntoView {
     let user_data =
@@ -93,6 +91,8 @@ pub async fn login(
     use crate::error::server_error;
     use crate::global;
     use crate::model::user::*;
+
+    const JWT_COOKIE_KEY: &str = "auth_token";
 
     let db = get_db(cx).await?;
 

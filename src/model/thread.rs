@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 #[derive(Clone, PartialEq)]
 pub enum ThreadStatus {
     Locked,

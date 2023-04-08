@@ -1,3 +1,4 @@
+#![allow(unused)]
 use crate::components::link::*;
 use crate::model::{category::Category, forum::*};
 use leptos::*;

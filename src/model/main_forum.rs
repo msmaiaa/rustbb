@@ -12,6 +12,7 @@ pub struct MainForum {
 cfg_if! {
 if #[cfg(feature = "ssr")] {
     impl MainForum {
+        #[allow(dead_code)]
         pub async fn get_main_forum(pool: &sqlx::Pool<sqlx::Postgres>) -> Result<MainForum, sqlx::Error> {
             let forum = sqlx::query_as!(
                 MainForum,
@@ -26,6 +27,7 @@ if #[cfg(feature = "ssr")] {
             Ok(forum)
         }
 
+        #[allow(dead_code)]
         pub async fn create(pool: &sqlx::Pool<sqlx::Postgres>, title: &str) -> Result<MainForum, sqlx::Error> {
             let forum = sqlx::query_as!(
                 MainForum,

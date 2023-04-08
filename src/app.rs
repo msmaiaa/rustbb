@@ -1,10 +1,10 @@
+#![allow(dead_code)]
 use crate::components::{footer::*, header::*, nav::*, sidebar::*};
 use crate::pages::forum::*;
 use crate::pages::home::*;
 use crate::pages::login::*;
 use crate::pages::register::*;
 use crate::pages::Page;
-use cookie::Cookie;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
@@ -26,6 +26,7 @@ pub async fn get_current_user(cx: Scope) -> Result<GetCurrentUserResponse, Serve
     use crate::auth::*;
     use crate::database::get_db;
     use crate::error::server_error;
+    use cookie::Cookie;
 
     let req = match use_context::<leptos_axum::LeptosRequest<axum::body::Body>>(cx) {
         Some(req) => req.take_request().unwrap(),

@@ -14,16 +14,16 @@ if #[cfg(feature = "ssr")] {
     use crate::permission_entries::StaticPermissionEntries;
 
     impl UserGroupOnPermission {
+        #[allow(dead_code)]
         pub async fn insert_default_entries_for_group(
             pool: &sqlx::Pool<sqlx::Postgres>,
             user_group_id: &str,
             permissions: &StaticPermissionEntries,
         ) -> Result<(), sqlx::Error> {
-            use crate::model::permission::Permission;
             use crate::permission_entries::ValueType;
 
             //  TODO: use only one query instead of this
-            for (id, label, value_type) in &permissions.0 {
+            for (id, _label, value_type) in &permissions.0 {
                 let value = match value_type {
                     ValueType::Boolean => "false".to_string(),
                     ValueType::Integer => "0".to_string(),
@@ -36,6 +36,7 @@ if #[cfg(feature = "ssr")] {
             Ok(())
         }
 
+        #[allow(dead_code)]
         pub async fn create(
             pool: &sqlx::Pool<sqlx::Postgres>,
             user_group_id: &str,
@@ -55,6 +56,7 @@ if #[cfg(feature = "ssr")] {
             .await
         }
 
+        #[allow(dead_code)]
         pub async fn create_ignore(
             pool: &sqlx::Pool<sqlx::Postgres>,
             user_group_id: &str,

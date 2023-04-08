@@ -1,6 +1,7 @@
 use cfg_if::cfg_if;
 use serde::{Deserialize, Serialize};
 
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum ValueType {
     Boolean,
@@ -16,6 +17,8 @@ pub struct Permission {
 cfg_if! {
 if #[cfg(feature = "ssr")] {
     impl Permission {
+
+        #[allow(dead_code)]
         pub async fn create(
             pool: &sqlx::Pool<sqlx::Postgres>,
             id: &str,
@@ -33,6 +36,7 @@ if #[cfg(feature = "ssr")] {
             .await
         }
 
+        #[allow(dead_code)]
         pub async fn create_if_not_exists(
             pool: &sqlx::Pool<sqlx::Postgres>,
             id: &str,
@@ -53,6 +57,7 @@ if #[cfg(feature = "ssr")] {
             Ok(())
         }
 
+        #[allow(dead_code)]
         pub async fn find_by_id(
             pool: &sqlx::Pool<sqlx::Postgres>,
             id: &str,

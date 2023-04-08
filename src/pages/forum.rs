@@ -1,14 +1,12 @@
-use chrono::NaiveDateTime;
+#![allow(unused)]
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 use serde::{Deserialize, Serialize};
 
-use crate::error::server_error;
-use crate::model::forum::Forum;
-use crate::model::thread::{Thread, ThreadStatus};
 use itertools::Itertools;
 
+#[allow(dead_code)]
 pub fn get_slug_and_id(path: &str) -> Option<(String, String)> {
     let path = path.replace("/forum/", "");
     let (slug, id) = match path.split('.').next_tuple() {
@@ -38,7 +36,7 @@ pub fn ForumPage(cx: Scope) -> impl IntoView {
             get_forum_page_data(cx, slug.to_string(), id.to_string()).await
         },
     );
-    let navigate = use_navigate(cx);
+    //let navigate = use_navigate(cx);
 
     let view = move |cx| {
         data.read(cx).map(|data| {
@@ -88,7 +86,7 @@ pub fn ForumPage(cx: Scope) -> impl IntoView {
                         </div>
                     }
                 }
-                Err(e) => {
+                Err(_) => {
                     //  TODO: redirect?
                     view! {cx,
                         <>

@@ -10,7 +10,6 @@ mod model;
 mod pages;
 mod permission_entries;
 use cfg_if::cfg_if;
-use leptos::provide_context;
 
 cfg_if! {
 if #[cfg(feature = "ssr")] {
@@ -21,12 +20,12 @@ if #[cfg(feature = "ssr")] {
         response::{Response, IntoResponse},
         routing::{post, get},
         extract::{Path, Extension, RawQuery},
-        http::{Request, header::HeaderMap, Uri},
+        http::{Request, header::HeaderMap},
         body::Body as AxumBody,
         Router,
     };
     use crate::fallback::*;
-    use strum::{IntoEnumIterator};
+    use dotenv::dotenv;
     use leptos_axum::{generate_route_list, LeptosRoutes, handle_server_fns_with_context};
 
     fn register_server_functions() {
@@ -57,7 +56,7 @@ if #[cfg(feature = "ssr")] {
         handler(req).await.into_response()
     }
 
-    async fn frontend_routes_handler(Extension(pool): Extension<sqlx::Pool<sqlx::Postgres>>, Extension(options): Extension<Arc<LeptosOptions>>, uri: Uri, req: Request<AxumBody>) -> Response{
+    async fn frontend_routes_handler(Extension(options): Extension<Arc<LeptosOptions>>, req: Request<AxumBody>) -> Response{
         // let uri = uri.clone();
         // for page in crate::pages::Page::iter() {
         //     if uri.path().eq(page.path()) {
@@ -69,14 +68,12 @@ if #[cfg(feature = "ssr")] {
         //         }
         //     }
         // }
-        return render_frontend(req, options, move |cx| {}).await;
+        return render_frontend(req, options, move |_| {}).await;
     }
 
     #[tokio::main]
     async fn main() {
-        use dotenv::dotenv;
         dotenv().ok();
-        use leptos_axum::{generate_route_list, LeptosRoutes, handle_server_fns_with_context};
 
         tracing_subscriber::fmt::init();
 

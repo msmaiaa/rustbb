@@ -1,8 +1,6 @@
 use cfg_if::cfg_if;
 use serde::{Deserialize, Serialize};
 
-use crate::auth::HashedString;
-
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct ForumUser {
     pub id: i32,
@@ -17,6 +15,7 @@ pub struct ForumUser {
 
 cfg_if! {
 if #[cfg(feature = "ssr")] {
+    use crate::auth::HashedString;
     impl ForumUser {
         pub async fn find_by_username_or_email(pool: &sqlx::Pool<sqlx::Postgres>, username: &str, email: &str) -> Result<Self, sqlx::Error> {
             sqlx::query_as!(Self,
@@ -53,6 +52,7 @@ if #[cfg(feature = "ssr")] {
             .fetch_one(pool).await
         }
 
+        #[allow(dead_code)]
         pub async fn find_by_username(pool: &sqlx::Pool<sqlx::Postgres>, username: &str) -> Result<Self, sqlx::Error> {
             sqlx::query_as!(Self,
                 r#"

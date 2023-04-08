@@ -1,6 +1,3 @@
-use std::future::Future;
-
-use leptos::*;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use wildmatch::WildMatch;
@@ -19,6 +16,7 @@ pub enum Page {
 }
 
 impl Page {
+    #[allow(dead_code)]
     pub fn path(&self) -> &'static str {
         match self {
             Page::Home => "/",
@@ -41,6 +39,7 @@ impl Page {
     //     }
     // }
 
+    #[allow(dead_code)]
     pub fn from_uri(uri: &str) -> Option<Page> {
         Page::iter().find(|page| {
             let path_with_wc = page

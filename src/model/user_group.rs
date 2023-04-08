@@ -10,8 +10,9 @@ pub struct UserGroup {
 
 cfg_if! {
 if #[cfg(feature="ssr")] {
-    use sqlx::{postgres::PgQueryResult, Error, Pool, Postgres};
+    use sqlx::{Error, Pool, Postgres};
     impl UserGroup {
+        #[allow(dead_code)]
         pub async fn create(
             pool: &Pool<Postgres>,
             id: &str,
@@ -33,6 +34,7 @@ if #[cfg(feature="ssr")] {
             .await
         }
 
+        #[allow(dead_code)]
         pub async fn find_by_id(pool: &Pool<Postgres>, id: &str) -> Result<Self, Error> {
             sqlx::query_as!(
                 Self,
@@ -45,12 +47,14 @@ if #[cfg(feature="ssr")] {
             .await
         }
 
+        #[allow(dead_code)]
         pub async fn select_all(pool: &Pool<Postgres>) -> Result<Vec<Self>, Error> {
             sqlx::query_as!(Self, r#"SELECT * FROM user_group"#)
                 .fetch_all(pool)
                 .await
         }
 
+        #[allow(dead_code)]
         pub async fn create_if_not_exists(
             db_pool: &Pool<Postgres>,
             id: &str,

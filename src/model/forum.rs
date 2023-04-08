@@ -1,5 +1,4 @@
 use cfg_if::cfg_if;
-use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Forum {
@@ -8,13 +7,15 @@ pub struct Forum {
     pub description: Option<String>,
     pub slug: String,
     pub category_id: i32,
-    pub created_at: NaiveDateTime,
+    pub created_at: chrono::NaiveDateTime,
 }
 
 cfg_if! {
     if #[cfg(feature="ssr")] {
         use sqlx::{Pool, Postgres};
         impl Forum {
+
+            #[allow(dead_code)]
             pub async fn find_by_id(db_pool: &Pool<Postgres>, forum_id: i32) -> Result<Forum, sqlx::Error> {
                 sqlx::query_as!(
                     Forum,
@@ -27,6 +28,7 @@ cfg_if! {
                 .await
             }
 
+            #[allow(dead_code)]
             pub async fn create(db_pool: &Pool<Postgres>, title: &str, slug: &str, category_id: i32) -> Result<Forum, sqlx::Error> {
                 sqlx::query_as!(
                     Forum,
@@ -43,6 +45,7 @@ cfg_if! {
                 .await
             }
 
+            #[allow(dead_code)]
             pub async fn create_with_desc(db_pool: &Pool<Postgres>, title: &str, slug: &str, category_id: i32, description: &str) -> Result<Forum, sqlx::Error> {
                 sqlx::query_as!(
                     Forum,

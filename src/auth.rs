@@ -1,9 +1,8 @@
 use cfg_if::cfg_if;
 
-pub struct HashedString(String);
-
 cfg_if! {
 if #[cfg(feature = "ssr")]{
+    pub struct HashedString(String);
     use serde::{de::DeserializeOwned, Deserialize, Serialize};
     use argon2::{self, Config, Error as Argon2Error};
     use jsonwebtoken::{encode, decode, Header, EncodingKey, DecodingKey, Algorithm, errors::Error as JwtError};

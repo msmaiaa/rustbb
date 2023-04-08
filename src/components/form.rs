@@ -27,7 +27,7 @@ pub fn FormRow(
                         signal.set(val);
                     }
                 }
-            required class="w-2/3 pl-1 h-[28px] rounded-sm bg-zinc-800" autocomplete="off" type=_type name=label id=id/>
+            required=required class="w-2/3 pl-1 h-[28px] rounded-sm bg-zinc-800" autocomplete="off" type=_type name=label id=id/>
         </div>
     }
 }

@@ -63,6 +63,7 @@ CREATE TABLE thread (
 	title VARCHAR(255) NOT NULL,
 	slug VARCHAR(255) NOT NULL,
 	sticky BOOLEAN NOT NULL DEFAULT FALSE,
+	locked BOOLEAN NOT NULL DEFAULT FALSE,
 	forum_id INT NOT NULL,
 	creator_id INT NOT NULL,
 
@@ -71,4 +72,23 @@ CREATE TABLE thread (
 
 	FOREIGN KEY (creator_id) REFERENCES forum_user(id),
 	FOREIGN KEY (forum_id) REFERENCES forum(id)
+);
+
+
+CREATE TABLE thread_visit (
+	thread_id INT NOT NULL,
+	visit_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (thread_id) REFERENCES thread(id)
+);
+
+CREATE TABLE post(
+	id SERIAL PRIMARY KEY,
+    content TEXT NOT NULL,
+    thread_id INT NOT NULL,
+    creator_id INT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (thread_id) REFERENCES thread(id),
+    FOREIGN KEY (creator_id) REFERENCES forum_user(id)
 );

@@ -1,10 +1,10 @@
 use leptos::{ev::MouseEvent, *};
 
 #[component]
-pub fn RouteLink<'a>(
+pub fn RouteLink(
     cx: Scope,
     to: String,
-    #[prop(optional)] class: &'a str,
+    #[prop(optional)] class: &'static str,
     #[prop(optional)] reload: bool,
     children: Children,
 ) -> impl IntoView {

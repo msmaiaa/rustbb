@@ -8,3 +8,4 @@ pub mod login_form;
 pub mod nav;
 pub mod register_form;
 pub mod sidebar;
+pub mod text_editor;

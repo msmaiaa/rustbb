@@ -1,4 +1,5 @@
 #![allow(unused)]
+use crate::components::button::*;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
@@ -6,10 +7,20 @@ use serde::{Deserialize, Serialize};
 
 use itertools::Itertools;
 
+#[derive(Clone, Debug, PartialEq, Params)]
+pub struct ForumPageParams {
+    pub slug_dot_id: String,
+}
+
 #[allow(dead_code)]
-pub fn get_slug_and_id(path: &str) -> Option<(String, String)> {
-    let path = path.replace("/forum/", "");
-    let (slug, id) = match path.split('.').next_tuple() {
+pub fn get_slug_and_id_ctx(cx: Scope) -> Option<(String, String)> {
+    let slug_and_id = match use_params::<ForumPageParams>(cx).get() {
+        Ok(params) => params.slug_dot_id.clone(),
+        Err(e) => {
+            return None;
+        }
+    };
+    let (slug, id) = match slug_and_id.split('.').next_tuple() {
         Some((slug, id)) => {
             if slug.is_empty() || id.is_empty() {
                 return None;
@@ -23,83 +34,121 @@ pub fn get_slug_and_id(path: &str) -> Option<(String, String)> {
     Some((slug.to_string(), id.to_string()))
 }
 
+type StickyThreads = Vec<ForumPageThread>;
+type NormalThreads = Vec<ForumPageThread>;
+pub fn get_sticky_and_normal_threads(
+    threads: Vec<ForumPageThread>,
+) -> (StickyThreads, NormalThreads) {
+    let sticky_threads = threads
+        .clone()
+        .into_iter()
+        .filter(|t| t.sticky)
+        .collect::<Vec<ForumPageThread>>();
+    let normal_threads = threads
+        .into_iter()
+        .filter(|t| !t.sticky)
+        .collect::<Vec<ForumPageThread>>();
+    (sticky_threads, normal_threads)
+}
+
+enum ThreadKind {
+    Sticky,
+    Normal,
+}
+
 #[component]
 pub fn ForumPage(cx: Scope) -> impl IntoView {
+    use crate::components::link::*;
+
     let data = create_resource(
         cx,
         || (),
         move |_| async move {
-            let route = use_route(cx);
-            let path = route.path();
-            let (slug, id) = get_slug_and_id(&path)
+            let (slug, id) = get_slug_and_id_ctx(cx)
                 .ok_or_else(|| ServerFnError::ServerError("Invalid path".to_string()))?;
             get_forum_page_data(cx, slug.to_string(), id.to_string()).await
         },
     );
-    //let navigate = use_navigate(cx);
 
-    let view = move |cx| {
-        data.read(cx).map(|data| {
-            match data {
-                Ok(data) => {
-                    let sticky_threads = data
-                        .clone()
-                        .threads
-                        .into_iter()
-                        .filter(|t| t.sticky)
-                        .collect::<Vec<ForumPageThread>>();
-                    let normal_threads = data
-                        .threads
-                        .into_iter()
-                        .filter(|t| !t.sticky)
-                        .collect::<Vec<ForumPageThread>>();
-                    view! {cx,
-                        <Title text={data.forum_title.clone()}/>
-                        <h2 class="text-2xl mb-6">{data.forum_title.clone()}</h2>
-                        <div class="flex flex-col w-full">
-                            <h2>"Sticky threads"</h2>
-                            <div>
-                                <For
-                                    each= move || sticky_threads.clone()
-                                    key=|n| n.id
-                                    view = move |cx, thread| {
-                                        view! {cx,
-                                            <ThreadCard thread={thread}/>
-                                        }
-                                    }
-                                />
-                            </div>
-                        </div>
-                        <div class="flex flex-col w-full">
-                            <h2>"Normal threads"</h2>
-                            <div>
-                                <For
-                                    each= move || normal_threads.clone()
-                                    key=|n| n.id
-                                    view = move |cx, thread| {
-                                        view! {cx,
-                                            <ThreadCard thread={thread}/>
-                                        }
-                                    }
-                                />
-                            </div>
-                        </div>
-                    }
-                }
-                Err(_) => {
-                    //  TODO: redirect?
-                    view! {cx,
-                        <>
-                            <p></p>
-                        </>
-                    }
-                }
-            }
-        })
+    let no_threads_view = move |cx| {
+        view! {cx,
+            <>
+                <p class="text-xl mb-6">"No threads here, mate"</p>
+            </>
+        }
     };
+
+    let threads_view = move |cx: Scope, kind: ThreadKind, threads: Vec<ForumPageThread>| {
+        view! {cx,
+            <div class="flex flex-col w-full">
+                <h2>{match kind {
+                    ThreadKind::Sticky => "Sticky threads",
+                    ThreadKind::Normal => "Normal threads",
+                }}</h2>
+                <div>
+                    <For
+                        each= move || threads.clone()
+                        key=|n| n.id
+                        view = move |cx, thread| {
+                            view! {cx,
+                                <ThreadCard thread={thread}/>
+                            }
+                        }
+                    />
+                </div>
+            </div>
+        }
+    };
+
     view! { cx,
         <div class="flex flex-col w-full">
-            <Suspense fallback=|| ()>{view(cx)}</Suspense>
+            <Suspense fallback=|| ()>
+            {move ||{
+                let path = use_route(cx).path();
+                view!{cx,
+                    <div>
+                        {move || {
+                            data.read(cx).map(|data| {
+                                match data {
+                                    Ok(data) => {
+                                        let (sticky_threads, normal_threads) =
+                                            get_sticky_and_normal_threads(data.threads.clone());
+                                        view! {cx,
+                                            <Title text={data.forum_title.clone()}/>
+                                            <div class="flex mb-6">
+                                                <h2 class="text-2xl mr-2">{data.forum_title.clone()}</h2>
+                                                <RouteLink class="flex items-center" to=format!("{}/create_thread", path)>"Create thread"</RouteLink>
+                                            </div>
+                                            <div class="bg-gray-900 rounded-sm">
+                                                {match data.threads.is_empty() {
+                                                    true => no_threads_view(cx),
+                                                    false => {
+                                                        view! {cx,
+                                                            <>
+                                                                {threads_view(cx, ThreadKind::Sticky, sticky_threads)}
+                                                                {threads_view(cx, ThreadKind::Normal, normal_threads)}
+                                                            </>
+                                                        }
+                                                    },
+                                                }}
+                                            </div>
+                                        }
+                                    }
+                                    Err(_) => {
+                                        //  TODO: redirect?
+                                        view! {cx,
+                                            <>
+                                                <p></p>
+                                            </>
+                                        }
+                                    }
+                                }
+                            })
+                        }}
+                    </div>
+                }
+            }}
+            </Suspense>
         </div>
     }
 }

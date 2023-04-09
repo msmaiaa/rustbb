@@ -53,7 +53,7 @@ where
                         view! {cx, <div></div>}
                     }
                 }}
-                <Button _type="submit">"Register"</Button>
+                <Button on_click=move|_|() _type="submit">"Register"</Button>
             </form>
         </Card>
     }

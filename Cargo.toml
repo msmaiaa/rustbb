@@ -10,20 +10,18 @@ crate-type = ["cdylib", "rlib"]
 
 
 [dependencies]
-leptos = { version = "0.2.5", default-features = false, features = [
+leptos = { path="../leptos/leptos", default-features = false, features = [
   "serde",
 ] }
-leptos_axum = { version = "0.2.5", optional = true }
-leptos_meta = { version = "0.2.5", default-features = false }
-leptos_router = { version = "0.2.5", default-features = false }
-gloo-net = { version = "0.2", features = ["http"] }
-gloo-storage = "0.2"
+leptos_axum = { path = "../leptos/integrations/axum", optional = true }
+leptos_meta = { path = "../leptos/meta", default-features = false }
+leptos_router = { path = "../leptos/router", default-features = false }
 log = "0.4"
 chrono = {version = "0.4.23", features = ["serde"]}
 cfg-if = "1.0"
 
 # dependecies for client (enable when csr or hydrate set)
-wasm-bindgen = { version = "0.2", optional = true }
+wasm-bindgen = { version = "0.2.84", optional = true }
 console_log = { version = "0.2", optional = true }
 console_error_panic_hook = { version = "0.1", optional = true }
 
@@ -51,10 +49,12 @@ cookie = "0.17.0"
 thiserror = "1.0.40"
 lazy_static = "1.4.0"
 slug = "0.1.4"
+itertools = "0.10.5"
+web-sys = { version = "0.3.61"}
 
 [features]
 default = ["hydrate"]
-hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate", "dep:wasm-bindgen", "dep:console_log", "dep:console_error_panic_hook"]
+hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate", "dep:console_log", "dep:console_error_panic_hook", "dep:wasm-bindgen"]
 ssr = ["leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:axum", "dep:tower", "dep:tower-http", "dep:futures", "dep:simple_logger", "dep:dotenv", "dep:tracing", "dep:tracing-subscriber", "dep:sqlx", "dep:rust-argon2", "dep:jsonwebtoken", "dep:leptos_axum", "dep:tokio"]
 
 [package.metadata.cargo-all-features]

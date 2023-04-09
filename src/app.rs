@@ -22,17 +22,13 @@ pub struct GetCurrentUserResponse {
     pub avatar_url: Option<String>,
 }
 
-#[server(GetCurrentUser, "/api")]
-pub async fn get_current_user(cx: Scope) -> Result<GetCurrentUserResponse, ServerFnError> {
+#[cfg(feature = "ssr")]
+pub fn token_from_cookie(
+    req: &http::Request<axum::body::Body>,
+) -> Result<crate::auth::AccessToken, ServerFnError> {
     use crate::auth::*;
-    use crate::database::get_db;
     use crate::error::server_error;
     use cookie::Cookie;
-
-    let req = match use_context::<leptos_axum::LeptosRequest<axum::body::Body>>(cx) {
-        Some(req) => req.take_request().unwrap(),
-        None => return server_error!("Couldn't get the request's info."),
-    };
 
     let cookies = req
         .headers()
@@ -45,7 +41,6 @@ pub async fn get_current_user(cx: Scope) -> Result<GetCurrentUserResponse, Serve
         .map(|cookies| cookies.to_owned())
         .unwrap();
     let mut found_cookie = None;
-    //  TODO: change to access_token
     for cookie in Cookie::split_parse(cookies) {
         let cookie = cookie.unwrap();
         match cookie.name() {
@@ -65,6 +60,20 @@ pub async fn get_current_user(cx: Scope) -> Result<GetCurrentUserResponse, Serve
         Ok(token) => token,
         Err(e) => return server_error!(e),
     };
+    Ok(token_data)
+}
+
+#[server(GetCurrentUser, "/api")]
+pub async fn get_current_user(cx: Scope) -> Result<GetCurrentUserResponse, ServerFnError> {
+    use crate::database::get_db;
+    use crate::error::server_error;
+
+    let req = match use_context::<leptos_axum::LeptosRequest<axum::body::Body>>(cx) {
+        Some(req) => req.take_request().unwrap(),
+        None => return server_error!("Couldn't get the request's info."),
+    };
+
+    let token_data = token_from_cookie(&req)?;
 
     let user =
         match crate::model::user::ForumUser::find_by_id(&get_db(cx).await?, token_data.user_id)

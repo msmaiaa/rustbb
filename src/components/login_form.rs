@@ -50,7 +50,7 @@ pub fn LoginForm(cx: Scope) -> impl IntoView {
             }>
                 <FormRow signal=Some(email) required=true label="Email" id="email" _type="email" class="mb-2"/>
                 <FormRow signal=Some(password) required=true label="Password" id="password" _type="password"/>
-                <Button _type="submit">"Login"</Button>
+                <Button on_click=move|_| () _type="submit">"Login"</Button>
             </form>
 
             {move|| {

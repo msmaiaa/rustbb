@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use crate::components::{footer::*, header::*, nav::*, sidebar::*};
+use crate::pages::create_thread::*;
 use crate::pages::forum::*;
 use crate::pages::home::*;
 use crate::pages::login::*;
@@ -108,15 +109,21 @@ pub fn App(cx: Scope) -> impl IntoView {
         <Link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
         <Script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></Script>
         <Link rel="shortcut icon" type_="image/ico" href="/favicon.ico"/>
+
+        /* sun text editor */
+        <Link fetchpriority="high" href="/vendor/suneditor.min.css" rel="stylesheet"/>
+        <Script fetchpriority="high" src="/vendor/suneditor.min.js"></Script>
+        <Script fetchpriority="high" src="/vendor/suneditor.en.js"></Script>
+
         <Title text="rustbb"/>
         <Router>
             <div class="text-text_primary bg-bg_primary min-h-screen relative">
                 <Header/>
                 <Navbar/>
-
                 <Layout>
                     <Routes>
                         <Route path={Page::Home.path()} view=move |cx| view! { cx, <Home/> }/>
+                        <Route path={Page::CreateThread.path()} view=move |cx| view! { cx, <CreateThreadPage/> }/>
                         <Route path={Page::Forum.path()} view=move |cx| view! { cx, <ForumPage/> }/>
                         <Route path={Page::Login.path()} view=move |cx| view! { cx, <Login/> }/>
                         <Route path={Page::Register.path()} view=move |cx| view! { cx, <Register/> }/>

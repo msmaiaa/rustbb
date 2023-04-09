@@ -2,6 +2,7 @@ use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use wildmatch::WildMatch;
 
+pub mod create_thread;
 pub mod forum;
 pub mod home;
 pub mod login;
@@ -13,6 +14,7 @@ pub enum Page {
     Forum,
     Login,
     Register,
+    CreateThread,
 }
 
 impl Page {
@@ -20,9 +22,10 @@ impl Page {
     pub fn path(&self) -> &'static str {
         match self {
             Page::Home => "/",
-            Page::Forum => "/forum/:id",
+            Page::Forum => "/forum/:slug_dot_id",
             Page::Login => "/login",
             Page::Register => "/register",
+            Page::CreateThread => "/forum/:slug_dot_id/create_thread",
         }
     }
 
@@ -30,12 +33,15 @@ impl Page {
     // pub fn preload_fn(
     //     &self,
     //     pool: sqlx::Pool<sqlx::Postgres>,
-    // ) -> Option<impl Future<Output = impl Fn(Scope) + Clone>> {
+    //     uri: http::Uri,
+    // ) -> Option<impl futures::Future<Output = Option<impl Fn(leptos::Scope) + Clone>>> {
+    //     use itertools::Itertools;
     //     match self {
-    //         Page::Home => None::<_>,
+    //         Page::Home => None,
     //         Page::Forum => None,
     //         Page::Login => None,
     //         Page::Register => None,
+    //         Page::CreateThread => None,
     //     }
     // }
 

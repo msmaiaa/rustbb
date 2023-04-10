@@ -3,6 +3,7 @@ pub mod card;
 pub mod footer;
 pub mod form;
 pub mod header;
+pub mod input;
 pub mod link;
 pub mod login_form;
 pub mod nav;

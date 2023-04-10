@@ -2,10 +2,10 @@ var editors = {};
 
 export function create_editor(textarea_id) {
 	let fullId = `suneditor_${textarea_id}`;
-	if (document.getElementById(fullId) || editors[fullId]) {
+	if (document.getElementById(fullId) || editors[textarea_id]) {
 		return false;
 	}
-	editors[fullId] = SUNEDITOR.create((document.getElementById(textarea_id)), {
+	editors[textarea_id] = SUNEDITOR.create((document.getElementById(textarea_id)), {
 		// All of the plugins are loaded in the "window.SUNEDITOR" object in dist/suneditor.min.js file
 		// Insert options
 		// Language global object (default: en)
@@ -14,8 +14,9 @@ export function create_editor(textarea_id) {
 	return true;
 }
 
-export function get_editor_text(id) {
-	let editor = editors["suneditor_" + id];
+export function get_editor_text(textarea_id) {
+	//	TODO: try catch
+	let editor = editors[textarea_id];
 	if (!editor) {
 		return "";
 	}

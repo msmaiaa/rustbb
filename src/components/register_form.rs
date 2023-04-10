@@ -45,12 +45,9 @@ where
                 <FormRow signal=Some(password) required=true label="Password" id="password" _type="password" class="mb-2"/>
                 <FormRow signal=Some(password_confirmation) required=true label="Confirm password" id="password_confirmation" _type="password"/>
                 {move || {
-                    if !error().is_empty() {
-                        view! {cx,
-                            <div class="text-red-500 text-sm">{error()}</div>
-                        }
-                    } else {
-                        view! {cx, <div></div>}
+                    match !error().is_empty() {
+                        true => view! {cx, <div class="text-red-500 text-sm">{error()}</div>},
+                        false => view! {cx, <div></div>}
                     }
                 }}
                 <Button on_click=move|_|() _type="submit">"Register"</Button>

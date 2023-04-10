@@ -98,6 +98,8 @@ pub fn App(cx: Scope) -> impl IntoView {
     let user_data = create_rw_signal(cx, None::<LoggedUserData>);
 
     provide_context(cx, user_data);
+
+    //  FIXME: we need to check if we have a user before rendering everything
     leptos::spawn_local(async move {
         match get_current_user(cx).await {
             Ok(user) => {

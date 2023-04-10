@@ -5,6 +5,7 @@ mod database;
 mod error;
 mod error_template;
 mod global;
+mod hooks;
 mod model;
 mod pages;
 mod permission_entries;

@@ -6,6 +6,7 @@ mod error;
 mod error_template;
 mod fallback;
 mod global;
+mod hooks;
 mod model;
 mod pages;
 mod permission_entries;

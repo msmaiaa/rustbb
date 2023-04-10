@@ -50,6 +50,7 @@ where
         }
     }
 
+    //  TODO: listen to the editor's change event and update a local state
     view! {cx,
         <textarea id=_id class=format!("{class}")/>
         <button on:click=on_click>"Submit"</button>

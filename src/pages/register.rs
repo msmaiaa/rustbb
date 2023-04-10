@@ -1,4 +1,4 @@
-use crate::{app::LoggedUserData, components::register_form::*};
+use crate::{components::register_form::*, hooks::use_user};
 use leptos::*;
 use leptos_router::use_navigate;
 use serde::{Deserialize, Serialize};
@@ -6,8 +6,7 @@ use serde::{Deserialize, Serialize};
 #[component]
 pub fn Register(cx: Scope) -> impl IntoView {
     let (error, set_error) = create_signal(cx, "".to_string());
-    let logged_user = use_context::<RwSignal<Option<LoggedUserData>>>(cx)
-        .expect("logged_user context is not set");
+    let logged_user = use_user(cx);
 
     let try_register_user = create_action(cx, move |payload: &RegisterUserPayload| {
         let payload = payload.to_owned();
@@ -27,11 +26,10 @@ pub fn Register(cx: Scope) -> impl IntoView {
         }
     });
 
-    create_effect(cx, move |_| match logged_user.get() {
-        Some(_) => {
+    create_effect(cx, move |_| {
+        if logged_user.get().is_some() {
             let _ = use_navigate(cx)("/", Default::default());
         }
-        None => {}
     });
 
     let on_register = move |payload: RegisterUserPayload| {

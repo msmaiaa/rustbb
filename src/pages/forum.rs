@@ -34,24 +34,6 @@ pub fn get_slug_and_id_ctx(cx: Scope) -> Option<(String, String)> {
     Some((slug.to_string(), id.to_string()))
 }
 
-type StickyThreads = Vec<ForumPageThread>;
-type NormalThreads = Vec<ForumPageThread>;
-pub fn get_sticky_and_normal_threads(
-    threads: Vec<ForumPageThread>,
-) -> (StickyThreads, NormalThreads) {
-    //  TODO: use partition?
-    let sticky_threads = threads
-        .clone()
-        .into_iter()
-        .filter(|t| t.sticky)
-        .collect::<Vec<ForumPageThread>>();
-    let normal_threads = threads
-        .into_iter()
-        .filter(|t| !t.sticky)
-        .collect::<Vec<ForumPageThread>>();
-    (sticky_threads, normal_threads)
-}
-
 enum ThreadKind {
     Sticky,
     Normal,
@@ -103,22 +85,19 @@ pub fn ForumPage(cx: Scope) -> impl IntoView {
 
     view! { cx,
         <div class="flex flex-col w-full">
-            <Suspense fallback=|| ()>
-            {move ||{
-                let path = use_route(cx).path();
+            <Suspense fallback=|| ()>{
                 view!{cx,
                     <div>
                         {move || {
                             data.read(cx).map(|data| {
                                 match data {
                                     Ok(data) => {
-                                        let (sticky_threads, normal_threads) =
-                                            get_sticky_and_normal_threads(data.threads.clone());
+                                        let (sticky_threads, normal_threads) = data.threads.clone().into_iter().partition(|t| t.sticky);
                                         view! {cx,
                                             <Title text={data.forum_title.clone()}/>
                                             <div class="flex mb-6">
-                                                <h2 class="text-2xl mr-2">{data.forum_title.clone()}</h2>
-                                                <RouteLink class="flex items-center" to=format!("{}/create_thread", path)>"Create thread"</RouteLink>
+                                                <h2 class="text-2xl mr-2">{&data.forum_title}</h2>
+                                                <RouteLink class="flex items-center" to=format!("{}/create_thread", use_route(cx).path())>"Create thread"</RouteLink>
                                             </div>
                                             <div class="bg-gray-900 rounded-sm">
                                                 {match data.threads.is_empty() {
@@ -147,8 +126,7 @@ pub fn ForumPage(cx: Scope) -> impl IntoView {
                             })
                         }}
                     </div>
-                }
-            }}
+                }}
             </Suspense>
         </div>
     }

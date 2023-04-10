@@ -9,10 +9,8 @@ use serde::Serialize;
 #[component]
 pub fn LoginForm<F>(cx: Scope, on_login: F) -> impl IntoView
 where
-    F: Fn() + 'static,
+    F: Fn(LoggedUserData) + 'static + Copy,
 {
-    let user_data =
-        use_context::<RwSignal<Option<LoggedUserData>>>(cx).expect("user_data context is not set");
     let (error, set_error) = create_signal(cx, "".to_string());
     let email = create_rw_signal(cx, "".to_string());
     let password = create_rw_signal(cx, "".to_string());
@@ -22,10 +20,10 @@ where
         async move {
             match login(cx, payload.email, payload.password).await {
                 Ok(response) => {
-                    user_data.set(Some(LoggedUserData {
+                    on_login(LoggedUserData {
                         username: response.username,
                         avatar_url: response.avatar_url,
-                    }));
+                    });
                 }
                 Err(e) => {
                     set_error(e.to_string());

@@ -12,7 +12,6 @@ if #[cfg(feature = "ssr")]{
             let hashed = hash_str(salt, string)?;
             Ok(Self(hashed))
         }
-
     }
 
     impl AsRef<str> for HashedString {

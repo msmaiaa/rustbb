@@ -39,6 +39,7 @@ type NormalThreads = Vec<ForumPageThread>;
 pub fn get_sticky_and_normal_threads(
     threads: Vec<ForumPageThread>,
 ) -> (StickyThreads, NormalThreads) {
+    //  TODO: use partition?
     let sticky_threads = threads
         .clone()
         .into_iter()

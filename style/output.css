@@ -577,6 +577,10 @@ video {
   height: 13rem;
 }
 
+.h-8 {
+  height: 2rem;
+}
+
 .h-9 {
   height: 2.25rem;
 }
@@ -587,10 +591,6 @@ video {
 
 .h-full {
   height: 100%;
-}
-
-.h-8 {
-  height: 2rem;
 }
 
 .min-h-screen {

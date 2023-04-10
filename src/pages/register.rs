@@ -1,11 +1,13 @@
-use crate::components::register_form::*;
+use crate::{app::LoggedUserData, components::register_form::*};
 use leptos::*;
+use leptos_router::use_navigate;
 use serde::{Deserialize, Serialize};
 
 #[component]
 pub fn Register(cx: Scope) -> impl IntoView {
     let (error, set_error) = create_signal(cx, "".to_string());
-    let (success, set_success) = create_signal(cx, "".to_string());
+    let logged_user = use_context::<RwSignal<Option<LoggedUserData>>>(cx)
+        .expect("logged_user context is not set");
 
     let try_register_user = create_action(cx, move |payload: &RegisterUserPayload| {
         let payload = payload.to_owned();
@@ -14,17 +16,22 @@ pub fn Register(cx: Scope) -> impl IntoView {
                 register_user(cx, payload.username, payload.email, payload.password).await;
             match response {
                 Ok(_) => {
-                    set_success("Successfully registered".to_string());
-                    set_error("".to_string());
+                    let _ = use_navigate(cx)("/login", Default::default());
                 }
-                Err(e) => {
+                Err(_) => {
                     //  FIXME: i couldn't figure out how to get the actual message that i sent from the server
                     //  it justs says "Internal Server Error"
-                    set_error(e.to_string());
-                    set_success("".to_string());
+                    set_error("Something went wrong".to_string());
                 }
             }
         }
+    });
+
+    create_effect(cx, move |_| match logged_user.get() {
+        Some(_) => {
+            let _ = use_navigate(cx)("/", Default::default());
+        }
+        None => {}
     });
 
     let on_register = move |payload: RegisterUserPayload| {
@@ -35,18 +42,11 @@ pub fn Register(cx: Scope) -> impl IntoView {
         <div class="flex flex-col items-center justify-center h-full w-full">
             <RegisterForm on_register/>
             {move || {
-                let err = error.get();
-                let success_msg = success.get();
-                if !err.is_empty() {
+                let error = error.get();
+                if !error.is_empty() {
                     view! {cx,
                         <div class="bg-red-500 text-white rounded-sm p-2 mt-2">
-                            {err}
-                        </div>
-                    }
-                } else if !success_msg.is_empty() {
-                    view! {cx,
-                        <div class="bg-green-500 text-white rounded-sm p-2 mt-2">
-                            {success_msg}
+                            {error}
                         </div>
                     }
                 } else {

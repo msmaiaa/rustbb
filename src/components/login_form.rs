@@ -7,7 +7,10 @@ use serde::Deserialize;
 use serde::Serialize;
 
 #[component]
-pub fn LoginForm(cx: Scope) -> impl IntoView {
+pub fn LoginForm<F>(cx: Scope, on_login: F) -> impl IntoView
+where
+    F: Fn() + 'static,
+{
     let user_data =
         use_context::<RwSignal<Option<LoggedUserData>>>(cx).expect("user_data context is not set");
     let (error, set_error) = create_signal(cx, "".to_string());

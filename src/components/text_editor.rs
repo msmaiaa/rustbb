@@ -38,21 +38,24 @@ where
     F: Fn(String) + 'static,
 {
     let _id = id.clone();
+    let __id = id.clone();
     let on_click = move |_| {
-        let id = id.clone();
+        let id = _id.clone();
         let editor_value = get_editor_text(id);
         on_submit(editor_value);
     };
 
-    cfg_if::cfg_if! {
-        if #[cfg(feature = "hydrate")] {
-            create_editor(_id.clone());
+    create_effect(cx, move |_| {
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "hydrate")] {
+                create_editor(id.clone());
+            }
         }
-    }
+    });
 
     //  TODO: listen to the editor's change event and update a local state
     view! {cx,
-        <textarea id=_id class=format!("{class}")/>
+        <textarea id=__id class=format!("{class}")/>
         <button on:click=on_click>"Submit"</button>
     }
 }

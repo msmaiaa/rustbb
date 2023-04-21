@@ -12,7 +12,6 @@ pub enum ValueType {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Permission {
     pub id: Thing,
-    pub tag: String,
     pub label: String,
 }
 
@@ -24,17 +23,16 @@ if #[cfg(feature = "ssr")] {
         #[allow(dead_code)]
         pub async fn create(
             pool: &SurrealPool,
-            tag: &str,
+            id: &str,
             label: &str,
         ) -> Result<Self, surrealdb::Error> {
             pool
                 .create("permission")
                 .content(Self {
                     id: Thing {
-                        id: Id::ulid(),
-                        tb: "permission".to_string()
+                        id: Id::String(id.to_string()),
+                        tb: "permission".to_string(),
                     },
-                    tag: tag.to_string(),
                     label: label.to_string(),
                 })
                 .await
@@ -43,15 +41,15 @@ if #[cfg(feature = "ssr")] {
         #[allow(dead_code)]
         pub async fn create_if_not_exists(
             pool: &SurrealPool,
-            tag: &str,
+            id: &str,
             label: &str,
         ) -> Result<(), surrealdb::Error> {
             use crate::model::permission::Permission;
 
-            match Permission::find_by_tag(pool, tag).await {
+            match Permission::find_by_id(pool, id).await {
                 Ok(data) => {
                      if data.is_none() {
-                            if let Err(e) = Permission::create(pool, tag, label).await {
+                            if let Err(e) = Permission::create(pool, id, label).await {
                                 tracing::error!("Error creating permission: {}", e.to_string());
                             }
                         }
@@ -65,11 +63,11 @@ if #[cfg(feature = "ssr")] {
         }
 
         #[allow(dead_code)]
-        pub async fn find_by_tag(
+        pub async fn find_by_id(
             pool: &SurrealPool,
-            tag: &str,
+            id: &str,
         ) -> Result<Option<Permission>, surrealdb::Error> {
-            pool.query(format!("SELECT * FROM permission WHERE tag = '{}'", tag)).await?.take(0)
+            pool.query(format!("SELECT * FROM permission:⟨{}⟩", id)).await?.take(0)
         }
     }
 }

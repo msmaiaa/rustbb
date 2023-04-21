@@ -1,6 +1,6 @@
 use lazy_static::lazy_static;
 
-pub type Id = &'static str;
+pub type Tag = &'static str;
 pub type Label = &'static str;
 
 #[allow(dead_code)]
@@ -9,7 +9,7 @@ pub enum ValueType {
     Boolean,
     Integer,
 }
-pub type PermissionEntry = (Id, Label, ValueType);
+pub type PermissionEntry = (Tag, Label, ValueType);
 
 #[derive(Clone, Debug)]
 pub struct StaticPermissionEntries(pub Vec<PermissionEntry>);

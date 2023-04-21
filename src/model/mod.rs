@@ -5,4 +5,3 @@ pub mod permission;
 pub mod thread;
 pub mod user;
 pub mod user_group;
-pub mod user_group_on_permission;

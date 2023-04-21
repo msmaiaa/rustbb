@@ -7,6 +7,8 @@ if #[cfg(feature = "ssr")] {
         pub static ref ARGON2_SALT: String = dotenv::var("ARGON2_SALT").expect("ARGON2_SALT must be set");
         pub static ref JWT_KEY: String = dotenv::var("JWT_KEY").expect("JWT_KEY must be set");
         pub static ref DATABASE_URL: String = dotenv::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        pub static ref DB_USER: String = dotenv::var("DB_USER").expect("DB_USER must be set");
+        pub static ref DB_PASS: String = dotenv::var("DB_PASS").expect("DB_PASS must be set");
     }
 }
 }

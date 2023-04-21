@@ -6,6 +6,8 @@ use leptos_router::*;
 use serde::{Deserialize, Serialize};
 
 use itertools::Itertools;
+use surrealdb::sql::Thing;
+use crate::model::thread::Thread;
 
 #[derive(Clone, Debug, PartialEq, Params)]
 pub struct ForumPageParams {
@@ -71,7 +73,7 @@ pub fn ForumPage(cx: Scope) -> impl IntoView {
                 <div>
                     <For
                         each= move || threads.clone()
-                        key=|n| n.id
+                        key=|n| n.id.to_raw()
                         view = move |cx, thread| {
                             view! {cx,
                                 <ThreadCard thread={thread}/>
@@ -155,7 +157,7 @@ pub struct ForumPageThread {
     pub title: String,
     pub slug: String,
     pub sticky: bool,
-    pub id: i32,
+    pub id: Thing,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -174,46 +176,20 @@ pub async fn get_forum_page_data(
         .map_err(|_| ServerFnError::ServerError("Invalid path".to_string()))?;
     let pool = crate::database::get_db(cx).await?;
 
-    let threads = sqlx::query_as!(
-        ForumPageThread,
-        r#"
-        SELECT
-            title,
-            slug,
-            sticky,
-            id
-        FROM
-            thread
-        WHERE
-            forum_id = $1
-        "#,
-        id
-    )
-    .fetch_all(&pool)
-    .await
-    .map_err(|_| ServerFnError::ServerError("Internal Server Error".to_string()))?;
+    let threads = pool
+        .query(format!("SELECT title, slug, sticky, id FROM thread WHERE forum_id = '{}'", id))
+        .await
+        .map_err(|e| ServerFnError::ServerError(e.to_string()))?
+        .take(0)
+        .map_err(|e| ServerFnError::ServerError(e.to_string()))?;
 
-    let forum_title = sqlx::query_as!(
-        ForumTitle,
-        r#"
-        SELECT
-            title
-        FROM
-            forum
-        WHERE
-            slug = $1
-        AND 
-            id = $2
-        "#,
-        slug,
-        id
-    )
-    .fetch_one(&pool)
-    .await
-    .map_err(|_| ServerFnError::ServerError("Internal Server Error".to_string()))?;
+    let forum_title: Option<ForumTitle> = pool.query(format!("SELECT title FROM forum WHERE slug = '{}' AND id = '{}'", slug, id)).await
+        .map_err(|e| ServerFnError::ServerError(e.to_string()))?
+        .take(0)
+        .map_err(|e| ServerFnError::ServerError(e.to_string()))?;
 
     Ok(ForumPageData {
-        forum_title: forum_title.title,
+        forum_title: forum_title.unwrap().title,
         threads,
     })
 }

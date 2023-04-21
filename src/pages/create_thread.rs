@@ -75,19 +75,19 @@ pub async fn create_thread(
     let db = crate::database::get_db(cx).await?;
     let slug = slug::slugify(&title);
 
-    sqlx::query!(
-        r#"
-        INSERT INTO thread (title, slug, content, forum_id, creator_id)
-        VALUES ($1, $2, $3, $4, $5)
-        "#,
-        title,
-        slug,
-        content,
-        forum_id,
-        token_data.user_id
-    )
-    .execute(&db)
-    .await
-    .map_err(|_| ServerFnError::ServerError("Database error".to_string()))?;
+    // sqlx::query!(
+    //     r#"
+    //     INSERT INTO thread (title, slug, content, forum_id, creator_id)
+    //     VALUES ($1, $2, $3, $4, $5)
+    //     "#,
+    //     title,
+    //     slug,
+    //     content,
+    //     forum_id,
+    //     token_data.user_id
+    // )
+    // .execute(&db)
+    // .await
+    // .map_err(|_| ServerFnError::ServerError("Database error".to_string()))?;
     Ok(())
 }

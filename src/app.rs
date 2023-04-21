@@ -80,10 +80,7 @@ pub async fn get_current_user(cx: Scope) -> Result<GetCurrentUserResponse, Serve
             .await
         {
             Ok(user) => user,
-            Err(e) => match e {
-                sqlx::Error::RowNotFound => return server_error!("User not found"),
-                _ => return server_error!("Internal server error"),
-            },
+            Err(e) => return server_error!("Internal server error"),
         };
 
     return Ok(GetCurrentUserResponse {
@@ -99,7 +96,7 @@ pub fn App(cx: Scope) -> impl IntoView {
 
     provide_context(cx, user_data);
 
-    //  FIXME: we need to check if we have a user before rendering everything
+    //  FIXME: we need to check if we have a user before rendering anything
     leptos::spawn_local(async move {
         match get_current_user(cx).await {
             Ok(user) => {

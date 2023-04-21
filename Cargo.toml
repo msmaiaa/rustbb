@@ -51,11 +51,12 @@ lazy_static = "1.4.0"
 slug = "0.1.4"
 itertools = "0.10.5"
 web-sys = { version = "0.3.61"}
+surrealdb = { version = "1.0.0-beta.9"}
 
 [features]
 default = ["hydrate"]
 hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate", "dep:console_log", "dep:console_error_panic_hook", "dep:wasm-bindgen"]
-ssr = ["leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:axum", "dep:tower", "dep:tower-http", "dep:futures", "dep:simple_logger", "dep:dotenv", "dep:tracing", "dep:tracing-subscriber", "dep:sqlx", "dep:rust-argon2", "dep:jsonwebtoken", "dep:leptos_axum", "dep:tokio"]
+ssr = ["leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:axum", "dep:tower", "dep:tower-http", "dep:futures", "dep:simple_logger", "dep:dotenv", "dep:sqlx", "dep:tracing", "dep:tracing-subscriber", "dep:rust-argon2", "dep:jsonwebtoken", "dep:leptos_axum", "dep:tokio"]
 
 [package.metadata.cargo-all-features]
 denylist = [

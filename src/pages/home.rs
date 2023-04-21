@@ -17,7 +17,7 @@ pub fn Home(cx: Scope) -> impl IntoView {
                         <div class="flex flex-col w-full">
                         <For
                             each=move || data.clone()
-                            key=|n| n.category.id
+                            key=|n| n.category.id.to_raw()
                             view = move |cx, data| {
                                 view! {cx,
                                     <CategoryCard category={data.category} forums={data.forums}/>
@@ -57,7 +57,7 @@ fn CategoryCard(cx: Scope, category: Category, forums: Option<Vec<Forum>>) -> im
             <div class="flex flex-col">
                     <For
                         each=move || forums.clone()
-                        key=|n| n.id
+                        key=|n| n.id.to_raw()
                         view = move |cx, forum| {
                             view! {cx,
                                 <ForumCard forum={forum}/>
@@ -108,74 +108,75 @@ pub async fn get_home_data(cx: Scope) -> Result<Vec<CategoryWithForums>, ServerF
     use crate::error::server_error;
     let pool = get_db(cx).await?;
 
-    //  retrieves all categories and their forums
-    let query_result = sqlx::query!(
-        r#"
-        SELECT
-        json_agg(
-            json_build_object(
-                'category',
-                json_build_object(
-                    'id', category.id,
-                    'title', category.title,
-                    'description', category.description,
-                    'created_at', category.created_at,
-                    'creator_id', category.creator_id
-                ),
-                'forums', forums.forums
-            )
-        ) AS result
-    FROM
-        category
-        LEFT JOIN (
-            SELECT
-                category_id,
-                json_agg(
-                    json_build_object(
-                        'id', id,
-                        'title', title,
-                        'description', description,
-                        'slug', slug,
-                        'category_id', category_id,
-                        'created_at', created_at
-                    ) ORDER BY id
-                ) AS forums
-            FROM
-                forum
-            GROUP BY
-                category_id
-        ) AS forums ON category.id = forums.category_id
-        "#
-    )
-    .fetch_one(&pool)
-    .await;
-
-    let query_result = match query_result {
-        Ok(res) => res,
-        Err(e) => {
-            tracing::error!("Couldn't fetch the categories and its forums: {:#?}", e);
-            return Ok(vec![]);
-        }
-    };
-
-    let data: Result<Vec<CategoryWithForums>, ServerFnError> = match query_result.result {
-        Some(data) => data,
-        None => return Ok(vec![]),
-    }
-    .as_array()
-    .ok_or(ServerFnError::ServerError(
-        "Internal server error".to_string(),
-    ))?
-    .into_iter()
-    .map(|x| {
-        serde_json::from_value::<CategoryWithForums>(x.clone()).map_err(|e| {
-            tracing::error!(
-                "Error serializing CategoryWithForums from the database rows: {}",
-                e.to_string()
-            );
-            ServerFnError::ServerError("Internal server error".to_string())
-        })
-    })
-    .collect();
-    return data;
+    Ok(vec![])
+    // //  retrieves all categories and their forums
+    // let query_result = sqlx::query!(
+    //     r#"
+    //     SELECT
+    //     json_agg(
+    //         json_build_object(
+    //             'category',
+    //             json_build_object(
+    //                 'id', category.id,
+    //                 'title', category.title,
+    //                 'description', category.description,
+    //                 'created_at', category.created_at,
+    //                 'creator_id', category.creator_id
+    //             ),
+    //             'forums', forums.forums
+    //         )
+    //     ) AS result
+    // FROM
+    //     category
+    //     LEFT JOIN (
+    //         SELECT
+    //             category_id,
+    //             json_agg(
+    //                 json_build_object(
+    //                     'id', id,
+    //                     'title', title,
+    //                     'description', description,
+    //                     'slug', slug,
+    //                     'category_id', category_id,
+    //                     'created_at', created_at
+    //                 ) ORDER BY id
+    //             ) AS forums
+    //         FROM
+    //             forum
+    //         GROUP BY
+    //             category_id
+    //     ) AS forums ON category.id = forums.category_id
+    //     "#
+    // )
+    // .fetch_one(&pool)
+    // .await;
+    //
+    // let query_result = match query_result {
+    //     Ok(res) => res,
+    //     Err(e) => {
+    //         tracing::error!("Couldn't fetch the categories and its forums: {:#?}", e);
+    //         return Ok(vec![]);
+    //     }
+    // };
+    //
+    // let data: Result<Vec<CategoryWithForums>, ServerFnError> = match query_result.result {
+    //     Some(data) => data,
+    //     None => return Ok(vec![]),
+    // }
+    // .as_array()
+    // .ok_or(ServerFnError::ServerError(
+    //     "Internal server error".to_string(),
+    // ))?
+    // .into_iter()
+    // .map(|x| {
+    //     serde_json::from_value::<CategoryWithForums>(x.clone()).map_err(|e| {
+    //         tracing::error!(
+    //             "Error serializing CategoryWithForums from the database rows: {}",
+    //             e.to_string()
+    //         );
+    //         ServerFnError::ServerError("Internal server error".to_string())
+    //     })
+    // })
+    // .collect();
+    // return data;
 }

@@ -1,5 +1,6 @@
 use cfg_if::cfg_if;
 use serde::{Deserialize, Serialize};
+use surrealdb::sql::Thing;
 
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
@@ -10,47 +11,53 @@ pub enum ValueType {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Permission {
-    pub id: String,
+    pub id: Thing,
+    pub tag: String,
     pub label: String,
 }
 
 cfg_if! {
 if #[cfg(feature = "ssr")] {
+    use crate::database::SurrealPool;
+        use surrealdb::sql::{Id};
     impl Permission {
-
         #[allow(dead_code)]
         pub async fn create(
-            pool: &sqlx::Pool<sqlx::Postgres>,
-            id: &str,
+            pool: &SurrealPool,
+            tag: &str,
             label: &str,
-        ) -> Result<sqlx::postgres::PgQueryResult, sqlx::Error> {
-            sqlx::query!(
-                r#"
-                INSERT INTO permission (id, label)
-                VALUES ($1, $2)
-                "#,
-                id,
-                label
-            )
-            .execute(pool)
-            .await
+        ) -> Result<Self, surrealdb::Error> {
+            pool
+                .create("permission")
+                .content(Self {
+                    id: Thing {
+                        id: Id::ulid(),
+                        tb: "permission".to_string()
+                    },
+                    tag: tag.to_string(),
+                    label: label.to_string(),
+                })
+                .await
         }
 
         #[allow(dead_code)]
         pub async fn create_if_not_exists(
-            pool: &sqlx::Pool<sqlx::Postgres>,
-            id: &str,
+            pool: &SurrealPool,
+            tag: &str,
             label: &str,
-        ) -> Result<(), sqlx::Error> {
+        ) -> Result<(), surrealdb::Error> {
             use crate::model::permission::Permission;
 
-            match Permission::find_by_id(pool, id).await {
-                Ok(_) => {}
-                Err(e) => match e {
-                    sqlx::Error::RowNotFound => {
-                        Permission::create(pool, id, label).await?;
-                    }
-                    _ => return Err(e),
+            match Permission::find_by_tag(pool, tag).await {
+                Ok(data) => {
+                     if data.is_none() {
+                            if let Err(e) = Permission::create(pool, tag, label).await {
+                                tracing::error!("Error creating permission: {}", e.to_string());
+                            }
+                        }
+                }
+                Err(e) => {
+                    tracing::error!("Error finding permission: {}", e.to_string());
                 },
             }
 
@@ -58,19 +65,11 @@ if #[cfg(feature = "ssr")] {
         }
 
         #[allow(dead_code)]
-        pub async fn find_by_id(
-            pool: &sqlx::Pool<sqlx::Postgres>,
-            id: &str,
-        ) -> Result<Self, sqlx::Error> {
-            sqlx::query_as!(
-                Self,
-                r#"
-                SELECT * FROM permission WHERE id = $1
-                "#,
-                id
-            )
-            .fetch_one(pool)
-            .await
+        pub async fn find_by_tag(
+            pool: &SurrealPool,
+            tag: &str,
+        ) -> Result<Option<Permission>, surrealdb::Error> {
+            pool.query(format!("SELECT * FROM permission WHERE tag = '{}'", tag)).await?.take(0)
         }
     }
 }

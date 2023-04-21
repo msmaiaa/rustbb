@@ -1,20 +1,21 @@
 version: '3.1'
 
 services:
-  db:
-    image: postgres
-    restart: always
-    container_name: rustbb_db
-    ports:
-      - ${POSTGRES_PORT}:5432
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - rustbb_db:/var/lib/postgresql/data
-    env_file:
-      - .env
+    db:
+      image: surrealdb/surrealdb:latest
+      container_name: rustbb_surrealdb
+      command:
+        - start
+        - --log=trace
+        - --user=${DB_USER}
+        - --pass=${DB_PASS}
+        - file:/var/lib/surrealdb/data/mydatabase.db 
+      ports:
+        - ${DB_PORT}:8000
+      volumes:
+        - rustbb:/var/lib/surrealdb/data
+      env_file:
+        - .env
 
 volumes:
-  rustbb_db:
+  rustbb:

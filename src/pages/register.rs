@@ -77,15 +77,17 @@ pub async fn register_user(
     use crate::error::server_error;
     use crate::global;
     use crate::model::user::*;
-
+    use crate::model::user_group::UserGroup;
     let db = get_db(cx).await?;
     let found_user = ForumUser::find_by_username_or_email(&db, &username, &email).await;
     if let Ok(u) = found_user {
-        if u.username == username {
-            return server_error!("Username already in use");
-        }
-        if u.email == email {
-            return server_error!("Email already in use");
+        if let Some(u) = u {
+            if u.username == username {
+                return server_error!("Username already in use");
+            }
+            if u.email == email {
+                return server_error!("Email already in use");
+            }
         }
     }
 
@@ -96,7 +98,7 @@ pub async fn register_user(
             return server_error!("Internal server error");
         }
     };
-
-    let _ = ForumUser::create(&db, &username, &email, hashed_pass, "Member").await;
+    let member_group = UserGroup::find_by_name(&db, "Member".to_string()).await.map_err(|_| ServerFnError::ServerError("Internal server error".to_string()))?;
+    let _ = ForumUser::create(&db, &username, &email, hashed_pass, member_group.unwrap().id).await;
     Ok(())
 }

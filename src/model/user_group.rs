@@ -1,3 +1,4 @@
+use crate::model::permission::Permission;
 use cfg_if::cfg_if;
 use serde::{Deserialize, Serialize};
 use surrealdb::sql::Thing;
@@ -8,13 +9,21 @@ pub struct UserGroup {
     pub name: String,
     pub user_title: String,
     pub description: Option<String>,
-    pub permissions: Vec<Thing>
+    pub permissions: Vec<UserGroupPermission>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct UserGroupPermission {
+    pub id: Thing,
+    pub value: String,
 }
 
 cfg_if! {
 if #[cfg(feature="ssr")] {
     use crate::database::SurrealPool;
     use surrealdb::sql::{Id};
+    use surrealdb::dbs::Response;
+
     impl UserGroup {
         pub async fn find_by_name(pool: &SurrealPool, name: String) -> Result<Option<UserGroup>, surrealdb::Error> {
             pool.query(format!("SELECT * FROM user_group WHERE name = '{}'", name)).await?.take(0)
@@ -25,7 +34,7 @@ if #[cfg(feature="ssr")] {
             name: &str,
             user_title: &str,
             description: Option<String>,
-        ) -> Result<Self, surrealdb::Error> {
+        ) -> Result<UserGroup, surrealdb::Error> {
             pool
                 .create("user_group")
                 .content(Self {
@@ -41,36 +50,45 @@ if #[cfg(feature="ssr")] {
                 .await
         }
 
-        // #[allow(dead_code)]
-        // pub async fn select_all(pool: &Pool<Postgres>) -> Result<Vec<Self>, Error> {
-        //     sqlx::query_as!(Self, r#"SELECT * FROM user_group"#)
-        //         .fetch_all(pool)
-        //         .await
-        // }
+        pub async fn select_all(pool: &SurrealPool) -> Result<Vec<UserGroup>, surrealdb::Error> {
+            pool.query("SELECT * FROM user_group").await?.take(0)
+        }
 
+        pub async fn add_permission(&self, pool: &SurrealPool, permission: Permission) -> Result<Option<Self>, surrealdb::Error> {
+            pool.query(format!("UPDATE {} SET permissions += $permission", self.id.to_raw()))
+                .bind(("permission", UserGroupPermission{
+                    value: permission.value_kind.default_value().to_string(),
+                    id: permission.id
+                }))
+                .await?
+                .take(0)
+        }
 
         pub async fn create_if_not_exists(
             db_pool: &SurrealPool,
             name: &str,
             user_title: &str,
             description: Option<String>,
-        ) -> Result<(), surrealdb::Error> {
+        ) -> Result<UserGroup, surrealdb::Error> {
             use crate::model::user_group::UserGroup;
 
             match UserGroup::find_by_name(db_pool, name.to_string()).await {
                 Ok(data) => {
-                    if data.is_none() {
-                        tracing::info!("{} group not found. Creating it now.", name);
-                        if let Err(e) = UserGroup::create(db_pool, name, user_title, description).await {
-                            tracing::error!("Couldn't create the {} group :( {}", name, e);
+                    match data {
+                            Some(data) => {
+                                return Ok(data)
+                            }
+                            None => {
+                                tracing::info!("{} group not found. Creating it now.", name);
+                                return UserGroup::create(db_pool, name, user_title, description).await
+                            }
                         }
-                    }
                 },
                 Err(e) => {
                     tracing::error!("Couldn't create the group: {}", name);
+                    return Err(e);
                 },
             }
-            Ok(())
         }
     }
 }

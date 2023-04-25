@@ -1,7 +1,7 @@
 use cfg_if::cfg_if;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use surrealdb::sql::Thing;
+use surrealdb::sql::{Id, Thing};
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct MainForum {
@@ -19,21 +19,17 @@ if #[cfg(feature = "ssr")] {
             Ok(forum.first().cloned())
         }
 
-        // #[allow(dead_code)]
-        // pub async fn create(pool: &SurrealPool, title: &str) -> Result<MainForum, surrealdb::Error> {
-        //     let forum = sqlx::query_as!(
-        //         MainForum,
-        //         r#"
-        //             INSERT INTO main_forum (title)
-        //             VALUES ($1)
-        //             RETURNING id, title, created_at
-        //         "#,
-        //         title
-        //     )
-        //     .fetch_one(pool)
-        //     .await?;
-        //     Ok(forum)
-        // }
+        #[allow(dead_code)]
+        pub async fn create(pool: &SurrealPool, title: &str) -> Result<MainForum, surrealdb::Error> {
+            pool.create("main_forum").content(Self {
+                id: Thing {
+                    id: Id::ulid(),
+                    tb: "main_forum".to_string()
+                },
+                title: title.to_string(),
+                created_at: Utc::now()
+            }).await
+        }
     }
 }
 }

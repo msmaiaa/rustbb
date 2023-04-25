@@ -9,7 +9,7 @@ mod global;
 mod hooks;
 mod model;
 mod pages;
-mod permission_entries;
+use crate::database::SurrealPool;
 use cfg_if::cfg_if;
 
 cfg_if! {
@@ -44,7 +44,7 @@ if #[cfg(feature = "ssr")] {
         _ = CreateThread::register();
     }
 
-    async fn server_fn_handler(Extension(pool): Extension<sqlx::Pool<sqlx::Postgres>>, path: Path<String>, headers: HeaderMap, raw_query: RawQuery, request: Request<AxumBody>) -> impl IntoResponse {
+    async fn server_fn_handler(Extension(pool): Extension<SurrealPool>, path: Path<String>, headers: HeaderMap, raw_query: RawQuery, request: Request<AxumBody>) -> impl IntoResponse {
         handle_server_fns_with_context(path, headers, raw_query, move |cx| {
             provide_context(cx, pool.clone());
         }, request).await

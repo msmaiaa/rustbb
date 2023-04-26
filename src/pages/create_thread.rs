@@ -1,17 +1,19 @@
-use crate::{components::text_editor::*, pages::forum::get_slug_and_id_ctx};
+use crate::components::text_editor::*;
+use crate::pages::forum::ForumPageParams;
 use leptos::*;
+use leptos_router::*;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct CreateThreadPayload {
     pub title: String,
     pub content: String,
-    pub forum_id: i32,
+    pub forum_id: String,
 }
 
 #[component]
 pub fn CreateThreadPage(cx: Scope) -> impl IntoView {
     let (title, set_title) = create_signal(cx, String::new());
-
+    let navigate = use_navigate(cx);
     let try_create_thread = create_action(cx, move |payload: &CreateThreadPayload| {
         let payload = payload.to_owned();
         async move {
@@ -30,16 +32,18 @@ pub fn CreateThreadPage(cx: Scope) -> impl IntoView {
             log!("Title or content is empty.");
             return;
         }
-        let (_, forum_id) = match get_slug_and_id_ctx(cx) {
-            Some((slug, id)) => (slug, id),
-            None => {
+
+        let forum_id = match use_params::<ForumPageParams>(cx).get() {
+            Ok(params) => params.id,
+            Err(_) => {
+                let _ = navigate("/", Default::default());
                 return;
             }
         };
         try_create_thread.dispatch(CreateThreadPayload {
             title,
             content,
-            forum_id: forum_id.parse::<i32>().unwrap(),
+            forum_id,
         });
     };
     view! {cx,
@@ -61,10 +65,15 @@ pub async fn create_thread(
     cx: Scope,
     title: String,
     content: String,
-    forum_id: i32,
+    forum_id: String,
 ) -> Result<(), ServerFnError> {
     use crate::app::token_from_cookie;
     use crate::error::server_error;
+    use crate::model::thread::Thread;
+    use itertools::Itertools;
+    use surrealdb::sql::{Id, Thing};
+
+    let forum = Thing::from(("forum".to_string(), forum_id));
 
     let req = match use_context::<leptos_axum::LeptosRequest<axum::body::Body>>(cx) {
         Some(req) => req.take_request().unwrap(),
@@ -75,19 +84,24 @@ pub async fn create_thread(
     let db = crate::database::get_db(cx).await?;
     let slug = slug::slugify(&title);
 
-    // sqlx::query!(
-    //     r#"
-    //     INSERT INTO thread (title, slug, content, forum_id, creator_id)
-    //     VALUES ($1, $2, $3, $4, $5)
-    //     "#,
-    //     title,
-    //     slug,
-    //     content,
-    //     forum_id,
-    //     token_data.user_id
-    // )
-    // .execute(&db)
-    // .await
-    // .map_err(|_| ServerFnError::ServerError("Database error".to_string()))?;
+    let uid: (&str, &str) = token_data.user_id.split(":").collect_tuple().unwrap();
+    let _thread: Thread = db
+        .create("thread")
+        .content(Thread {
+            id: Thing {
+                id: Id::ulid(),
+                tb: "thread".to_string(),
+            },
+            title,
+            slug,
+            content,
+            sticky: false,
+            locked: false,
+            forum,
+            created_by: Thing::from(uid),
+            created_at: chrono::Utc::now(),
+        })
+        .await
+        .map_err(|e| ServerFnError::ServerError(e.to_string()))?;
     Ok(())
 }

@@ -16,12 +16,12 @@ cfg_if! {
     else if #[cfg(feature = "ssr")] {
 
         #[allow(dead_code)]
-        fn get_editor_text(id: String) -> String {
+        fn get_editor_text(_id: String) -> String {
             "".into()
         }
 
         #[allow(dead_code)]
-        fn create_editor(id: String) -> bool {
+        fn create_editor(_id: String) -> bool {
             false
         }
     }

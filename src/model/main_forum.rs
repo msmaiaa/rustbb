@@ -1,7 +1,7 @@
 use cfg_if::cfg_if;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use surrealdb::sql::{Id, Thing};
+use surrealdb::sql::Thing;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct MainForum {
@@ -23,7 +23,7 @@ if #[cfg(feature = "ssr")] {
         pub async fn create(pool: &SurrealPool, title: &str) -> Result<MainForum, surrealdb::Error> {
             pool.create("main_forum").content(Self {
                 id: Thing {
-                    id: Id::ulid(),
+                    id: surrealdb::sql::Id::ulid(),
                     tb: "main_forum".to_string()
                 },
                 title: title.to_string(),

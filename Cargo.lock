@@ -1521,6 +1521,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tokio-util",
+ "tracing",
 ]
 
 [[package]]
@@ -1585,6 +1586,7 @@ dependencies = [
  "leptos_config",
  "leptos_hot_reload",
  "leptos_meta",
+ "tracing",
 ]
 
 [[package]]
@@ -1604,6 +1606,7 @@ dependencies = [
  "server_fn_macro",
  "syn 1.0.109",
  "syn-rsx",
+ "tracing",
  "uuid",
 ]
 
@@ -1676,6 +1679,7 @@ dependencies = [
  "serde",
  "server_fn",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]

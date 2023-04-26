@@ -102,13 +102,11 @@ pub async fn login(
         None => return server_error!("Couldn't get response options"),
     };
 
-
     let found_user = match ForumUser::find_by_email(&db, &email).await {
-        Err(e) => {
-            return server_error!("Internal server error")
-        },
+        Err(e) => return server_error!(e.to_string()),
         Ok(user) => user,
-    }.ok_or_else(|| ServerFnError::ServerError("couldn't find user".to_string()))?;
+    }
+    .ok_or_else(|| ServerFnError::ServerError("couldn't find user".to_string()))?;
 
     let hashed_pass = match hash_str(global::ARGON2_SALT.as_ref(), &password) {
         Ok(h) => h,

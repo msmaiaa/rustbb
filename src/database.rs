@@ -76,10 +76,17 @@ if #[cfg(feature = "ssr")] {
                 }
             };
 
-            match Forum::create(db_pool, "Main forum", &slug::slugify("Main forum"), category.id).await {
-                Ok(_) => tracing::info!("The default category and forum were created successfully."),
-                Err(e) => tracing::error!("Error while creating the default forum: {}", e),
-            }
+            let forum = match Forum::create(db_pool, "Main forum", &slug::slugify("Main forum"), category.id.clone()).await {
+                Ok(data) => {
+                    tracing::info!("The default category and forum were created successfully.");
+                    data
+                },
+                Err(e) => {
+                    tracing::error!("Error while creating the default forum: {}", e);
+                    return ();
+                },
+            };
+            category.add_forum(db_pool, forum.id).await.expect("Couldn't add the default forum to the default category");
         }
     }
 

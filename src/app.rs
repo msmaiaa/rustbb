@@ -79,8 +79,14 @@ pub async fn get_current_user(cx: Scope) -> Result<GetCurrentUserResponse, Serve
         match crate::model::user::ForumUser::find_by_id(&get_db(cx).await?, token_data.user_id)
             .await
         {
-            Ok(user) => user,
-            Err(e) => return server_error!("Internal server error"),
+            Ok(user) => match user {
+                Some(user) => user,
+                None => return server_error!("Couldn't find the user."),
+            },
+            Err(e) => {
+                tracing::info!("{}", e.to_string());
+                return server_error!("Internal server error");
+            }
         };
 
     return Ok(GetCurrentUserResponse {

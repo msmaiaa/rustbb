@@ -1,3 +1,4 @@
+#[allow(unused)]
 use crate::model::permission::Permission;
 use cfg_if::cfg_if;
 use serde::{Deserialize, Serialize};
@@ -22,7 +23,6 @@ cfg_if! {
 if #[cfg(feature="ssr")] {
     use crate::database::SurrealPool;
     use surrealdb::sql::{Id};
-    use surrealdb::dbs::Response;
 
     impl UserGroup {
         pub async fn find_by_name(pool: &SurrealPool, name: String) -> Result<Option<UserGroup>, surrealdb::Error> {

@@ -1,7 +1,7 @@
 use cfg_if::cfg_if;
+#[allow(unused)]
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
 use surrealdb::sql::Thing;
 
 #[allow(dead_code)]
@@ -13,6 +13,7 @@ pub enum PermissionValueKind {
 }
 
 impl PermissionValueKind {
+    #[allow(dead_code)]
     pub fn default_value(&self) -> &'static str {
         match self {
             PermissionValueKind::Boolean => "false",
@@ -91,7 +92,6 @@ if #[cfg(feature = "ssr")] {
         pool.query(format!("SELECT * FROM permission:⟨{}⟩", id))
         .await?
         .take(0)
-        //.map(|data| data.map(|data| data.into()))
     }
 
     pub async fn select_all(pool: &SurrealPool) -> Result<Vec<Permission>, surrealdb::Error> {

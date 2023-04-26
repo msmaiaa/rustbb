@@ -1,7 +1,8 @@
-use crate::database;
 use cfg_if::cfg_if;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+
+#[allow(unused)]
 use surrealdb::sql::{Id, Thing};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -21,7 +22,7 @@ if #[cfg(feature = "ssr")] {
     use crate::database::SurrealPool;
     impl ForumUser {
         pub async fn find_by_username_or_email(pool: &SurrealPool, username: &str, email: &str) -> Result<Option<ForumUser>, surrealdb::Error> {
-            pool.query(format!("SELECT * FROM forum_user WHERE username = '{}' OR email = '{}'", username, email)).await?.take(0)
+            pool.query(format!("SELECT * FROM user WHERE username = '{}' OR email = '{}'", username, email)).await?.take(0)
         }
 
         pub async fn create(pool: &SurrealPool, username: &str, email: &str, password: HashedString, user_group: Thing) -> Result<ForumUser, surrealdb::Error> {
@@ -50,11 +51,9 @@ if #[cfg(feature = "ssr")] {
         pub async fn find_by_username(pool: &SurrealPool, username: &str) -> Result<Option<ForumUser>, surrealdb::Error> {
             pool.query(format!("SELECT * FROM user WHERE username = '{}'", username)).await?.take(0)
         }
-        fn test() {
 
-            }
-        pub async fn find_by_id(pool: &SurrealPool, id: String) -> Result<ForumUser, surrealdb::Error> {
-            pool.select::<Option<ForumUser>>(("user", id)).await
+        pub async fn find_by_id(pool: &SurrealPool, id: String) -> Result<Option<ForumUser>, surrealdb::Error> {
+            pool.query(format!("SELECT * FROM {}", id)).await?.take(0)
         }
     }
 }

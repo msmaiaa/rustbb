@@ -22,10 +22,10 @@ impl Page {
     pub fn path(&self) -> &'static str {
         match self {
             Page::Home => "/",
-            Page::Forum => "/forum/:slug_dot_id",
+            Page::Forum => "/forum/:id",
             Page::Login => "/login",
             Page::Register => "/register",
-            Page::CreateThread => "/forum/:slug_dot_id/create_thread",
+            Page::CreateThread => "/forum/:id/create_thread",
         }
     }
 

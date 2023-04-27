@@ -19,18 +19,18 @@ pub struct Count {
 
 cfg_if! {
     if #[cfg(feature="ssr")] {
-        use crate::database::SurrealPool;
+        use crate::database::SurrealClient;
         use surrealdb::sql::{Id};
         impl Category {
-            pub async fn count(pool: &SurrealPool) -> Result<Option<Count>, surrealdb::Error> {
-                pool
+            pub async fn count(db: &SurrealClient) -> Result<Option<Count>, surrealdb::Error> {
+                db
                 .query("SELECT count() FROM category")
                 .await?
                 .take::<Option<Count>>(0)
             }
 
-            pub async fn create(pool: &SurrealPool, title: &str) -> Result<Category, surrealdb::Error> {
-                pool
+            pub async fn create(db: &SurrealClient, title: &str) -> Result<Category, surrealdb::Error> {
+                db
                     .create("category")
                     .content(Self {
                         id: Thing {
@@ -45,8 +45,8 @@ cfg_if! {
                     .await
             }
 
-            pub async fn add_forum(self, pool: &SurrealPool, forum_id: Thing) -> Result<Option<Category>, surrealdb::Error> {
-                pool.query(format!("UPDATE {} SET forums += $forum", self.id.to_raw()))
+            pub async fn add_forum(self, db: &SurrealClient, forum_id: Thing) -> Result<Option<Category>, surrealdb::Error> {
+                db.query(format!("UPDATE {} SET forums += $forum", self.id.to_raw()))
                 .bind(("forum", forum_id))
                 .await?
                 .take(0)

@@ -230,8 +230,8 @@ impl<'de> Deserialize<'de> for HomeCategory {
 pub async fn get_home_data(cx: Scope) -> Result<Vec<HomeCategory>, ServerFnError> {
     use crate::database::get_db;
     use crate::error::server_error;
-    let pool = get_db(cx).await?;
-    let result = pool.query("SELECT id, title, description, (SELECT title, slug, id, description from forums.*.*) AS forums FROM category")
+    let db = get_db(cx).await?;
+    let result = db.query("SELECT id, title, description, (SELECT title, slug, id, description from forums.*.*) AS forums FROM category")
         .await
         .map_err(|e| ServerFnError::ServerError(e.to_string()))?
         .take::<Vec<HomeCategory>>(0)

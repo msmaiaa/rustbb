@@ -151,9 +151,9 @@ pub struct ForumTitle {
 
 #[server(GetForumPageData, "/api")]
 pub async fn get_forum_page_data(cx: Scope, id: String) -> Result<ForumPageData, ServerFnError> {
-    let pool = crate::database::get_db(cx).await?;
+    let db = crate::database::get_db(cx).await?;
 
-    let threads = pool
+    let threads = db
         .query(format!(
             "SELECT title, slug, sticky, id FROM thread WHERE forum_id = '{}'",
             id
@@ -163,7 +163,7 @@ pub async fn get_forum_page_data(cx: Scope, id: String) -> Result<ForumPageData,
         .take(0)
         .map_err(|e| ServerFnError::ServerError(e.to_string()))?;
 
-    let forum_title: Option<ForumTitle> = pool
+    let forum_title: Option<ForumTitle> = db
         .query(format!("SELECT title FROM forum:{}", id))
         .await
         .map_err(|e| ServerFnError::ServerError(e.to_string()))?

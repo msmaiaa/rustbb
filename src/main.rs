@@ -9,7 +9,7 @@ mod global;
 mod hooks;
 mod model;
 mod pages;
-use crate::database::SurrealPool;
+use crate::database::SurrealClient;
 use cfg_if::cfg_if;
 
 cfg_if! {
@@ -44,9 +44,9 @@ if #[cfg(feature = "ssr")] {
         _ = CreateThread::register();
     }
 
-    async fn server_fn_handler(Extension(pool): Extension<SurrealPool>, path: Path<String>, headers: HeaderMap, raw_query: RawQuery, request: Request<AxumBody>) -> impl IntoResponse {
+    async fn server_fn_handler(Extension(db): Extension<SurrealClient>, path: Path<String>, headers: HeaderMap, raw_query: RawQuery, request: Request<AxumBody>) -> impl IntoResponse {
         handle_server_fns_with_context(path, headers, raw_query, move |cx| {
-            provide_context(cx, pool.clone());
+            provide_context(cx, db.clone());
         }, request).await
     }
 
@@ -63,7 +63,7 @@ if #[cfg(feature = "ssr")] {
         // let uri = uri.clone();
         // for page in crate::pages::Page::iter() {
         //     if uri.path().eq(page.path()) {
-        //         if let Some(f) = page.preload_fn(pool.clone()) {
+        //         if let Some(f) = page.preload_fn(db.clone()) {
         //             let cb = f.await;
         //             return render_frontend(req, options, move |cx| {
         //                 cb(cx);
@@ -80,7 +80,7 @@ if #[cfg(feature = "ssr")] {
 
         tracing_subscriber::fmt::init();
 
-        let db_pool = database::setup().await;
+        let db = database::setup().await;
 
         let conf = get_configuration(Some("Cargo.toml")).await.unwrap();
         let addr = conf.leptos_options.site_addr.clone();
@@ -93,7 +93,7 @@ if #[cfg(feature = "ssr")] {
         .route("/api/*fn_name", post(server_fn_handler))
         .fallback(file_and_error_handler)
         .layer(Extension(Arc::new(conf.leptos_options)))
-        .layer(Extension(db_pool));
+        .layer(Extension(db));
 
         axum::Server::bind(&addr)
         .serve(app.into_make_service())

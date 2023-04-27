@@ -32,7 +32,7 @@ impl Page {
     // #[cfg(feature = "ssr")]
     // pub fn preload_fn(
     //     &self,
-    //     pool: sqlx::Pool<sqlx::Postgres>,
+    //     db: sqlx::db<sqlx::Postgres>,
     //     uri: http::Uri,
     // ) -> Option<impl futures::Future<Output = Option<impl Fn(leptos::Scope) + Clone>>> {
     //     use itertools::Itertools;

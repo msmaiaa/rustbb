@@ -12,16 +12,16 @@ pub struct MainForum {
 
 cfg_if! {
 if #[cfg(feature = "ssr")] {
-    use crate::database::SurrealPool;
+    use crate::database::SurrealClient;
     impl MainForum {
-        pub async fn get_main_forum(pool: &SurrealPool) -> Result<Option<MainForum>, surrealdb::Error> {
-            let forum: Vec<MainForum> = pool.select("main_forum").await?;
+        pub async fn get_main_forum(db: &SurrealClient) -> Result<Option<MainForum>, surrealdb::Error> {
+            let forum: Vec<MainForum> = db.select("main_forum").await?;
             Ok(forum.first().cloned())
         }
 
         #[allow(dead_code)]
-        pub async fn create(pool: &SurrealPool, title: &str) -> Result<MainForum, surrealdb::Error> {
-            pool.create("main_forum").content(Self {
+        pub async fn create(db: &SurrealClient, title: &str) -> Result<MainForum, surrealdb::Error> {
+            db.create("main_forum").content(Self {
                 id: Thing {
                     id: surrealdb::sql::Id::ulid(),
                     tb: "main_forum".to_string()

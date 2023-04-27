@@ -40,17 +40,17 @@ pub struct Permission {
 
 cfg_if! {
 if #[cfg(feature = "ssr")] {
-    use crate::database::SurrealPool;
+    use crate::database::SurrealClient;
 
     impl Permission {
     #[allow(dead_code)]
     pub async fn create(
-    pool: &SurrealPool,
+    db: &SurrealClient,
     id: &str,
     description: &str,
     value_kind: PermissionValueKind,
     ) -> Result<Self, surrealdb::Error> {
-        pool.create("permission").content(Self {
+        db.create("permission").content(Self {
             id: Thing {
                 id: id.into(),
                 tb: "permission".into(),
@@ -62,17 +62,17 @@ if #[cfg(feature = "ssr")] {
 
     #[allow(dead_code)]
     pub async fn create_if_not_exists(
-    pool: &SurrealPool,
+    db: &SurrealClient,
     id: &str,
     description: &str,
     value_kind: PermissionValueKind,
     ) -> Result<(), surrealdb::Error> {
     use crate::model::permission::Permission;
 
-    match Permission::find_by_id(pool, id).await {
+    match Permission::find_by_id(db, id).await {
         Ok(data) => {
             if data.is_none() {
-                if let Err(e) = Permission::create(pool, id, description, value_kind).await {
+                if let Err(e) = Permission::create(db, id, description, value_kind).await {
                     tracing::error!("Error creating permission: {}", e.to_string());
                 }
             }
@@ -86,16 +86,17 @@ if #[cfg(feature = "ssr")] {
 
     #[allow(dead_code)]
     pub async fn find_by_id(
-    pool: &SurrealPool,
+    db: &SurrealClient,
     id: &str,
     ) -> Result<Option<Permission>, surrealdb::Error> {
-        pool.query(format!("SELECT * FROM permission:⟨{}⟩", id))
+        db
+        .query(format!("SELECT * FROM permission:⟨{id}⟩"))
         .await?
         .take(0)
     }
 
-    pub async fn select_all(pool: &SurrealPool) -> Result<Vec<Permission>, surrealdb::Error> {
-        pool.select("permission").await
+    pub async fn select_all(db: &SurrealClient) -> Result<Vec<Permission>, surrealdb::Error> {
+        db.select("permission").await
     }
 }
 

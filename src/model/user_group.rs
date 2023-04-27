@@ -21,21 +21,21 @@ pub struct UserGroupPermission {
 
 cfg_if! {
 if #[cfg(feature="ssr")] {
-    use crate::database::SurrealPool;
+    use crate::database::SurrealClient;
     use surrealdb::sql::{Id};
 
     impl UserGroup {
-        pub async fn find_by_name(pool: &SurrealPool, name: String) -> Result<Option<UserGroup>, surrealdb::Error> {
-            pool.query(format!("SELECT * FROM user_group WHERE name = '{}'", name)).await?.take(0)
+        pub async fn find_by_name(db: &SurrealClient, name: String) -> Result<Option<UserGroup>, surrealdb::Error> {
+            db.query(format!("SELECT * FROM user_group WHERE name = '{}'", name)).await?.take(0)
         }
 
         pub async fn create(
-            pool: &SurrealPool,
+            db: &SurrealClient,
             name: &str,
             user_title: &str,
             description: Option<String>,
         ) -> Result<UserGroup, surrealdb::Error> {
-            pool
+            db
                 .create("user_group")
                 .content(Self {
                     id: Thing {
@@ -50,12 +50,12 @@ if #[cfg(feature="ssr")] {
                 .await
         }
 
-        pub async fn select_all(pool: &SurrealPool) -> Result<Vec<UserGroup>, surrealdb::Error> {
-            pool.query("SELECT * FROM user_group").await?.take(0)
+        pub async fn select_all(db: &SurrealClient) -> Result<Vec<UserGroup>, surrealdb::Error> {
+            db.query("SELECT * FROM user_group").await?.take(0)
         }
 
-        pub async fn add_permission(&self, pool: &SurrealPool, permission: Permission) -> Result<Option<Self>, surrealdb::Error> {
-            pool.query(format!("UPDATE {} SET permissions += $permission", self.id.to_raw()))
+        pub async fn add_permission(&self, db: &SurrealClient, permission: Permission) -> Result<Option<Self>, surrealdb::Error> {
+            db.query(format!("UPDATE {} SET permissions += $permission", self.id.to_raw()))
                 .bind(("permission", UserGroupPermission{
                     value: permission.value_kind.default_value().to_string(),
                     id: permission.id
@@ -65,14 +65,14 @@ if #[cfg(feature="ssr")] {
         }
 
         pub async fn create_if_not_exists(
-            db_pool: &SurrealPool,
+            db: &SurrealClient,
             name: &str,
             user_title: &str,
             description: Option<String>,
         ) -> Result<UserGroup, surrealdb::Error> {
             use crate::model::user_group::UserGroup;
 
-            match UserGroup::find_by_name(db_pool, name.to_string()).await {
+            match UserGroup::find_by_name(db, name.to_string()).await {
                 Ok(data) => {
                     match data {
                             Some(data) => {
@@ -80,7 +80,7 @@ if #[cfg(feature="ssr")] {
                             }
                             None => {
                                 tracing::info!("{} group not found. Creating it now.", name);
-                                return UserGroup::create(db_pool, name, user_title, description).await
+                                return UserGroup::create(db, name, user_title, description).await
                             }
                         }
                 },

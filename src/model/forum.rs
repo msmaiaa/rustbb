@@ -15,16 +15,11 @@ pub struct Forum {
 
 cfg_if! {
     if #[cfg(feature="ssr")] {
-        use crate::database::SurrealPool;
+        use crate::database::SurrealClient;
         impl Forum {
-            // #[allow(dead_code)]
-            // pub async fn find_by_id(pool: &SurrealPool, forum_id: String) -> Result<Self, surrealdb::Error> {
-            //     pool.select::<Option<Self>>(("forum", forum_id)).await
-            // }
-            //
             #[allow(dead_code)]
-            pub async fn create(db_pool: &SurrealPool, title: &str, slug: &str, category: Thing) -> Result<Forum, surrealdb::Error> {
-                db_pool.create("forum")
+            pub async fn create(db: &SurrealClient, title: &str, slug: &str, category: Thing) -> Result<Forum, surrealdb::Error> {
+                db.create("forum")
                     .content(Forum {
                         id: Thing {
                             id: surrealdb::sql::Id::ulid(),
@@ -38,24 +33,6 @@ cfg_if! {
                     })
                     .await
             }
-
-            // #[allow(dead_code)]
-            // pub async fn create_with_desc(db_pool: &SurrealPool, title: &str, slug: &str, category_id: i32, description: &str) -> Result<Forum, surrealdb::Error> {
-            //     sqlx::query_as!(
-            //         Forum,
-            //         r#"
-            //         INSERT INTO forum (title, slug, category_id, description)
-            //         VALUES ($1, $2, $3, $4)
-            //         RETURNING *
-            //         "#,
-            //         title,
-            //         slug,
-            //         category_id,
-            //         description
-            //     )
-            //     .fetch_one(db_pool)
-            //     .await
-            // }
         }
     }
 }

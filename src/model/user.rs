@@ -19,14 +19,18 @@ pub struct ForumUser {
 cfg_if! {
 if #[cfg(feature = "ssr")] {
     use crate::auth::HashedString;
-    use crate::database::SurrealPool;
+    use crate::database::SurrealClient;
     impl ForumUser {
-        pub async fn find_by_username_or_email(pool: &SurrealPool, username: &str, email: &str) -> Result<Option<ForumUser>, surrealdb::Error> {
-            pool.query(format!("SELECT * FROM user WHERE username = '{}' OR email = '{}'", username, email)).await?.take(0)
+        pub async fn find_by_username_or_email(db: &SurrealClient, username: &str, email: &str) -> Result<Option<ForumUser>, surrealdb::Error> {
+            db
+                .query("SELECT * FROM user WHERE username = $username OR email = $email")
+                .bind(("username", username))
+                .bind(("email", email))
+                .await?.take(0)
         }
 
-        pub async fn create(pool: &SurrealPool, username: &str, email: &str, password: HashedString, user_group: Thing) -> Result<ForumUser, surrealdb::Error> {
-            pool
+        pub async fn create(db: &SurrealClient, username: &str, email: &str, password: HashedString, user_group: Thing) -> Result<ForumUser, surrealdb::Error> {
+            db
                 .create("user")
                 .content(Self {
                     id: Thing {
@@ -43,17 +47,24 @@ if #[cfg(feature = "ssr")] {
                 .await
         }
 
-        pub async fn find_by_email(pool: &SurrealPool, email: &str) -> Result<Option<ForumUser>, surrealdb::Error> {
-            pool.query(format!("SELECT * FROM user WHERE email = '{}'", email)).await?.take(0)
+        pub async fn find_by_email(db: &SurrealClient, email: &str) -> Result<Option<ForumUser>, surrealdb::Error> {
+            db
+                .query("SELECT * FROM user WHERE email = $email")
+                .bind(("email", email))
+                .await?.take(0)
         }
 
         #[allow(dead_code)]
-        pub async fn find_by_username(pool: &SurrealPool, username: &str) -> Result<Option<ForumUser>, surrealdb::Error> {
-            pool.query(format!("SELECT * FROM user WHERE username = '{}'", username)).await?.take(0)
+        pub async fn find_by_username(db: &SurrealClient, username: &str) -> Result<Option<ForumUser>, surrealdb::Error> {
+            db.query("SELECT * FROM user WHERE username = $username")
+                .bind(("username", username))
+                .await?.take(0)
         }
 
-        pub async fn find_by_id(pool: &SurrealPool, id: String) -> Result<Option<ForumUser>, surrealdb::Error> {
-            pool.query(format!("SELECT * FROM {}", id)).await?.take(0)
+        pub async fn find_by_id(db: &SurrealClient, id: String) -> Result<Option<ForumUser>, surrealdb::Error> {
+         db
+                .query(format!("SELECT * FROM {id}"))
+                .await?.take(0);
         }
     }
 }

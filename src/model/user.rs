@@ -64,7 +64,7 @@ if #[cfg(feature = "ssr")] {
         pub async fn find_by_id(db: &SurrealClient, id: String) -> Result<Option<ForumUser>, surrealdb::Error> {
          db
                 .query(format!("SELECT * FROM {id}"))
-                .await?.take(0);
+                .await?.take(0)
         }
     }
 }

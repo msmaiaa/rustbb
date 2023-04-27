@@ -20,6 +20,12 @@ if #[cfg(feature = "ssr")]{
         }
     }
 
+    impl ToString for HashedString {
+        fn to_string(&self) -> String {
+            self.0.clone()
+        }
+    }
+
     pub fn hash_str(salt: &str, content: &str) -> Result<String, Argon2Error> {
         let config = Config::default();
         argon2::hash_encoded(content.as_bytes(), salt.as_bytes(), &config)
@@ -27,11 +33,11 @@ if #[cfg(feature = "ssr")]{
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct AccessToken {
-        pub user_id: i32,
+        pub user_id: String,
         pub exp: i64,
     }
 
-    pub fn generate_access_token(user_id: i32, jwt_key: &str) -> Result<String, JwtError> {
+    pub fn generate_access_token(user_id: String, jwt_key: &str) -> Result<String, JwtError> {
         let iat = chrono::Utc::now();
         //  TODO: get the expiration time from a environment variable
         let exp = iat + chrono::Duration::weeks(1);

@@ -1,18 +1,16 @@
-#[allow(dead_code)]
-#[derive(Clone, PartialEq)]
-pub enum ThreadStatus {
-    Locked,
-    Unlocked,
-}
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use surrealdb::sql::Thing;
 
-#[derive(Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct Thread {
-    pub id: i64,
+    pub id: Thing,
     pub title: String,
     pub slug: String,
-    pub status: ThreadStatus,
+    pub content: String,
     pub sticky: bool,
-
-    pub forum_id: i64,
-    pub creator_id: i64,
+    pub locked: bool,
+    pub forum: Thing,
+    pub created_by: Thing,
+    pub created_at: DateTime<Utc>,
 }

@@ -22,17 +22,17 @@ impl Page {
     pub fn path(&self) -> &'static str {
         match self {
             Page::Home => "/",
-            Page::Forum => "/forum/:slug_dot_id",
+            Page::Forum => "/forum/:id",
             Page::Login => "/login",
             Page::Register => "/register",
-            Page::CreateThread => "/forum/:slug_dot_id/create_thread",
+            Page::CreateThread => "/forum/:id/create_thread",
         }
     }
 
     // #[cfg(feature = "ssr")]
     // pub fn preload_fn(
     //     &self,
-    //     pool: sqlx::Pool<sqlx::Postgres>,
+    //     db: sqlx::db<sqlx::Postgres>,
     //     uri: http::Uri,
     // ) -> Option<impl futures::Future<Output = Option<impl Fn(leptos::Scope) + Clone>>> {
     //     use itertools::Itertools;

@@ -8,7 +8,6 @@ mod global;
 mod hooks;
 mod model;
 mod pages;
-mod permission_entries;
 use cfg_if::cfg_if;
 
 cfg_if! {

@@ -1,81 +1,55 @@
 use cfg_if::cfg_if;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use surrealdb::sql::Thing;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Category {
-    pub id: i32,
+    pub id: Thing,
     pub title: String,
+    pub forums: Vec<Thing>,
     pub description: Option<String>,
-    pub creator_id: i32,
-    pub created_at: NaiveDateTime,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Count {
+    pub count: i64,
 }
 
 cfg_if! {
     if #[cfg(feature="ssr")] {
-        use sqlx::{Pool, Postgres};
-        struct Exists {
-            exists: Option<bool>
-        }
+        use crate::database::SurrealClient;
+        use surrealdb::sql::{Id};
         impl Category {
-            #[allow(dead_code)]
-            pub async fn find_by_id(db_pool: &Pool<Postgres>, category_id: i32) -> Result<Category, sqlx::Error> {
-                sqlx::query_as!(
-                    Category,
-                    r#"
-                    SELECT * FROM category WHERE id = $1
-                    "#,
-                    category_id
-                )
-                .fetch_one(db_pool)
-                .await
-            }
-
-            #[allow(dead_code)]
-            pub async fn is_empty(db_pool: &Pool<Postgres>) -> Result<bool, sqlx::Error> {
-                Ok(sqlx::query_as!(Exists,
-                    r#"
-                        select exists (select * from category)
-                    "#
-                )
-                .fetch_one(db_pool)
+            pub async fn count(db: &SurrealClient) -> Result<Option<Count>, surrealdb::Error> {
+                db
+                .query("SELECT count() FROM category")
                 .await?
-                .exists
-                .map(|e| !e)
-                .unwrap_or(false))
+                .take::<Option<Count>>(0)
             }
 
-            #[allow(dead_code)]
-            pub async fn create(db_pool: &Pool<Postgres>, title: &str, creator_id: i32) -> Result<Category, sqlx::Error> {
-                sqlx::query_as!(
-                    Category,
-                    r#"
-                    INSERT INTO category (title, creator_id)
-                    VALUES ($1, $2)
-                    RETURNING *
-                    "#,
-                    title,
-                    creator_id
-                )
-                .fetch_one(db_pool)
-                .await
+            pub async fn create(db: &SurrealClient, title: &str) -> Result<Category, surrealdb::Error> {
+                db
+                    .create("category")
+                    .content(Self {
+                        id: Thing {
+                            id: Id::ulid(),
+                            tb: "category".to_string()
+                        },
+                        title: title.to_string(),
+                        forums: vec![],
+                        description: None,
+                        created_at: Utc::now()
+                    })
+                    .await
             }
 
-            #[allow(dead_code)]
-            pub async fn create_with_desc(db_pool: &Pool<Postgres>, title: &str, description: &str, creator_id: i32) -> Result<Category, sqlx::Error> {
-                sqlx::query_as!(
-                    Category,
-                    r#"
-                    INSERT INTO category (title, description, creator_id)
-                    VALUES ($1, $2, $3)
-                    RETURNING *
-                    "#,
-                    title,
-                    description,
-                    creator_id
-                )
-                .fetch_one(db_pool)
-                .await
+            pub async fn add_forum(self, db: &SurrealClient, forum_id: Thing) -> Result<Option<Category>, surrealdb::Error> {
+                db.query(format!("UPDATE {} SET forums += $forum", self.id.to_raw()))
+                .bind(("forum", forum_id))
+                .await?
+                .take(0)
             }
         }
     }

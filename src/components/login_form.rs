@@ -103,12 +103,10 @@ pub async fn login(
     };
 
     let found_user = match ForumUser::find_by_email(&db, &email).await {
-        Err(e) => match e {
-            sqlx::Error::RowNotFound => return server_error!("User not found"),
-            _ => return server_error!("Internal server error"),
-        },
+        Err(e) => return server_error!(e.to_string()),
         Ok(user) => user,
-    };
+    }
+    .ok_or_else(|| ServerFnError::ServerError("couldn't find user".to_string()))?;
 
     let hashed_pass = match hash_str(global::ARGON2_SALT.as_ref(), &password) {
         Ok(h) => h,
@@ -116,7 +114,7 @@ pub async fn login(
     };
 
     if found_user.password == hashed_pass {
-        match generate_access_token(found_user.id, global::JWT_KEY.as_ref()) {
+        match generate_access_token(found_user.id.to_raw(), global::JWT_KEY.as_ref()) {
             Ok(token) => {
                 response.insert_header(
                     http::header::SET_COOKIE,

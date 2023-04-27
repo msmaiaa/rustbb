@@ -1,84 +1,94 @@
+#[allow(unused)]
+use crate::model::permission::Permission;
 use cfg_if::cfg_if;
 use serde::{Deserialize, Serialize};
+use surrealdb::sql::Thing;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct UserGroup {
-    pub id: String,
+    pub id: Thing,
+    pub name: String,
     pub user_title: String,
     pub description: Option<String>,
+    pub permissions: Vec<UserGroupPermission>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct UserGroupPermission {
+    pub id: Thing,
+    pub value: String,
 }
 
 cfg_if! {
 if #[cfg(feature="ssr")] {
-    use sqlx::{Error, Pool, Postgres};
+    use crate::database::SurrealClient;
+    use surrealdb::sql::{Id};
+
     impl UserGroup {
-        #[allow(dead_code)]
+        pub async fn find_by_name(db: &SurrealClient, name: String) -> Result<Option<UserGroup>, surrealdb::Error> {
+            db.query(format!("SELECT * FROM user_group WHERE name = '{}'", name)).await?.take(0)
+        }
+
         pub async fn create(
-            pool: &Pool<Postgres>,
-            id: &str,
+            db: &SurrealClient,
+            name: &str,
             user_title: &str,
             description: Option<String>,
-        ) -> Result<Self, Error> {
-            sqlx::query_as!(
-                Self,
-                r#"
-                INSERT INTO user_group (id, user_title, description)
-                VALUES ($1, $2, $3)
-                RETURNING id, user_title, description
-                "#,
-                id,
-                user_title,
-                description
-            )
-            .fetch_one(pool)
-            .await
-        }
-
-        #[allow(dead_code)]
-        pub async fn find_by_id(pool: &Pool<Postgres>, id: &str) -> Result<Self, Error> {
-            sqlx::query_as!(
-                Self,
-                r#"
-                SELECT * FROM user_group WHERE id = $1
-                "#,
-                id
-            )
-            .fetch_one(pool)
-            .await
-        }
-
-        #[allow(dead_code)]
-        pub async fn select_all(pool: &Pool<Postgres>) -> Result<Vec<Self>, Error> {
-            sqlx::query_as!(Self, r#"SELECT * FROM user_group"#)
-                .fetch_all(pool)
+        ) -> Result<UserGroup, surrealdb::Error> {
+            db
+                .create("user_group")
+                .content(Self {
+                    id: Thing {
+                        id: Id::ulid(),
+                        tb: "user_group".to_string()
+                    },
+                    name: name.to_string(),
+                    user_title: user_title.to_string(),
+                    description,
+                    permissions: vec![]
+                })
                 .await
         }
 
-        #[allow(dead_code)]
+        pub async fn select_all(db: &SurrealClient) -> Result<Vec<UserGroup>, surrealdb::Error> {
+            db.query("SELECT * FROM user_group").await?.take(0)
+        }
+
+        pub async fn add_permission(&self, db: &SurrealClient, permission: Permission) -> Result<Option<Self>, surrealdb::Error> {
+            db.query(format!("UPDATE {} SET permissions += $permission", self.id.to_raw()))
+                .bind(("permission", UserGroupPermission{
+                    value: permission.value_kind.default_value().to_string(),
+                    id: permission.id
+                }))
+                .await?
+                .take(0)
+        }
+
         pub async fn create_if_not_exists(
-            db_pool: &Pool<Postgres>,
-            id: &str,
+            db: &SurrealClient,
+            name: &str,
             user_title: &str,
             description: Option<String>,
-        ) -> Result<(), sqlx::Error> {
+        ) -> Result<UserGroup, surrealdb::Error> {
             use crate::model::user_group::UserGroup;
 
-            match UserGroup::find_by_id(db_pool, id).await {
-                Ok(_) => tracing::info!("The {} group already exists.", id),
-                Err(e) => match e {
-                    sqlx::Error::RowNotFound => {
-                        tracing::info!("{} group not found. Creating it now.", id);
-                        if let Err(e) = UserGroup::create(db_pool, id, user_title, description).await {
-                            tracing::error!("Couldn't create the {} group :( {}", id, e);
+            match UserGroup::find_by_name(db, name.to_string()).await {
+                Ok(data) => {
+                    match data {
+                            Some(data) => {
+                                return Ok(data)
+                            }
+                            None => {
+                                tracing::info!("{} group not found. Creating it now.", name);
+                                return UserGroup::create(db, name, user_title, description).await
+                            }
                         }
-                    }
-                    _ => {
-                        tracing::error!("Error while querying for the {} group: {}", id, e);
-                        return Err(e);
-                    }
+                },
+                Err(e) => {
+                    tracing::error!("Couldn't create the group: {}", name);
+                    return Err(e);
                 },
             }
-            Ok(())
         }
     }
 }

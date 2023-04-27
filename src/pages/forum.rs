@@ -5,33 +5,13 @@ use leptos_meta::*;
 use leptos_router::*;
 use serde::{Deserialize, Serialize};
 
+use crate::model::thread::Thread;
 use itertools::Itertools;
+use surrealdb::sql::Thing;
 
 #[derive(Clone, Debug, PartialEq, Params)]
 pub struct ForumPageParams {
-    pub slug_dot_id: String,
-}
-
-#[allow(dead_code)]
-pub fn get_slug_and_id_ctx(cx: Scope) -> Option<(String, String)> {
-    let slug_and_id = match use_params::<ForumPageParams>(cx).get() {
-        Ok(params) => params.slug_dot_id.clone(),
-        Err(e) => {
-            return None;
-        }
-    };
-    let (slug, id) = match slug_and_id.split('.').next_tuple() {
-        Some((slug, id)) => {
-            if slug.is_empty() || id.is_empty() {
-                return None;
-            }
-            (slug, id)
-        }
-        None => {
-            return None;
-        }
-    };
-    Some((slug.to_string(), id.to_string()))
+    pub id: String,
 }
 
 enum ThreadKind {
@@ -42,14 +22,20 @@ enum ThreadKind {
 #[component]
 pub fn ForumPage(cx: Scope) -> impl IntoView {
     use crate::components::link::*;
+    let forum_id = match use_params::<ForumPageParams>(cx).get() {
+        Ok(params) => params.id,
+        Err(e) => {
+            _ = use_navigate(cx)("/", Default::default());
+            "".to_string()
+        }
+    };
 
     let data = create_resource(
         cx,
         || (),
-        move |_| async move {
-            let (slug, id) = get_slug_and_id_ctx(cx)
-                .ok_or_else(|| ServerFnError::ServerError("Invalid path".to_string()))?;
-            get_forum_page_data(cx, slug.to_string(), id.to_string()).await
+        move |_| {
+            let _forum_id = forum_id.clone();
+            async move { get_forum_page_data(cx, _forum_id).await }
         },
     );
 
@@ -71,7 +57,7 @@ pub fn ForumPage(cx: Scope) -> impl IntoView {
                 <div>
                     <For
                         each= move || threads.clone()
-                        key=|n| n.id
+                        key=|n| n.id.to_raw()
                         view = move |cx, thread| {
                             view! {cx,
                                 <ThreadCard thread={thread}/>
@@ -155,7 +141,7 @@ pub struct ForumPageThread {
     pub title: String,
     pub slug: String,
     pub sticky: bool,
-    pub id: i32,
+    pub id: Thing,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -164,56 +150,31 @@ pub struct ForumTitle {
 }
 
 #[server(GetForumPageData, "/api")]
-pub async fn get_forum_page_data(
-    cx: Scope,
-    slug: String,
-    id: String,
-) -> Result<ForumPageData, ServerFnError> {
-    let id = id
-        .parse::<i32>()
-        .map_err(|_| ServerFnError::ServerError("Invalid path".to_string()))?;
-    let pool = crate::database::get_db(cx).await?;
+pub async fn get_forum_page_data(cx: Scope, id: String) -> Result<ForumPageData, ServerFnError> {
+    let db = crate::database::get_db(cx).await?;
 
-    let threads = sqlx::query_as!(
-        ForumPageThread,
-        r#"
-        SELECT
-            title,
-            slug,
-            sticky,
+    let threads = db
+        .query(format!(
+            "SELECT title, slug, sticky, id FROM thread WHERE forum_id = '{}'",
             id
-        FROM
-            thread
-        WHERE
-            forum_id = $1
-        "#,
-        id
-    )
-    .fetch_all(&pool)
-    .await
-    .map_err(|_| ServerFnError::ServerError("Internal Server Error".to_string()))?;
+        ))
+        .await
+        .map_err(|e| ServerFnError::ServerError(e.to_string()))?
+        .take(0)
+        .map_err(|e| ServerFnError::ServerError(e.to_string()))?;
 
-    let forum_title = sqlx::query_as!(
-        ForumTitle,
-        r#"
-        SELECT
-            title
-        FROM
-            forum
-        WHERE
-            slug = $1
-        AND 
-            id = $2
-        "#,
-        slug,
-        id
-    )
-    .fetch_one(&pool)
-    .await
-    .map_err(|_| ServerFnError::ServerError("Internal Server Error".to_string()))?;
+    let forum_title: Option<ForumTitle> = db
+        .query(format!("SELECT title FROM forum:{}", id))
+        .await
+        .map_err(|e| ServerFnError::ServerError(e.to_string()))?
+        .take(0)
+        .map_err(|e| ServerFnError::ServerError(e.to_string()))?;
 
-    Ok(ForumPageData {
-        forum_title: forum_title.title,
-        threads,
-    })
+    return match forum_title {
+        None => Err(ServerFnError::ServerError("Forum not found".to_string())),
+        _ => Ok(ForumPageData {
+            forum_title: forum_title.unwrap().title,
+            threads,
+        }),
+    };
 }

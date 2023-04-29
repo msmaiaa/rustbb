@@ -1,6 +1,4 @@
 use cfg_if::cfg_if;
-#[allow(unused)]
-use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use surrealdb::sql::Thing;
 
@@ -23,14 +21,6 @@ impl PermissionValueKind {
     }
 }
 
-pub type Id = &'static str;
-pub type Label = &'static str;
-
-type StaticPermissionEntry = (Id, Label, PermissionValueKind);
-
-#[derive(Clone, Debug)]
-pub struct StaticPermissionEntries(pub Vec<StaticPermissionEntry>);
-
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Permission {
     pub id: Thing,
@@ -41,6 +31,15 @@ pub struct Permission {
 cfg_if! {
 if #[cfg(feature = "ssr")] {
     use crate::database::SurrealClient;
+
+    pub type Id = &'static str;
+    pub type Label = &'static str;
+
+    use lazy_static::lazy_static;
+    type StaticPermissionEntry = (Id, Label, PermissionValueKind);
+
+    #[derive(Clone, Debug)]
+    pub struct StaticPermissionEntries(pub Vec<StaticPermissionEntry>);
 
     impl Permission {
     #[allow(dead_code)]
@@ -99,31 +98,104 @@ if #[cfg(feature = "ssr")] {
         db.select("permission").await
     }
 }
+}
+}
 
+#[cfg(feature = "ssr")]
 lazy_static! {
     pub static ref PERMISSION_ENTRIES: StaticPermissionEntries = StaticPermissionEntries(vec![
-        ("thread.create", "Create threads", PermissionValueKind::Boolean),
-        ("thread.edit", "Edit own threads", PermissionValueKind::Boolean),
-        ("thread.delete", "Delete own threads", PermissionValueKind::Boolean),
-        ("thread.edit_any", "Edit threads from any user", PermissionValueKind::Boolean),
-        ("thread.delete_any", "Delete threads from any user", PermissionValueKind::Boolean),
-        ("thread.move_any", "Move threads", PermissionValueKind::Boolean),
-        ("thread.approve", "Approve threads", PermissionValueKind::Boolean),
-        ("thread.delete", "Delete threads", PermissionValueKind::Boolean),
-        ("thread.subscribe", "Subscribe to threads", PermissionValueKind::Boolean),
-        ("thread.unsubscribe", "Unsubscribe from threads", PermissionValueKind::Boolean),
-        ("category.create", "Create categories", PermissionValueKind::Boolean),
-        ("category.edit", "Edit categories", PermissionValueKind::Boolean),
-        ("category.delete", "Delete categories", PermissionValueKind::Boolean),
-        ("forum.create", "Create a forum", PermissionValueKind::Boolean),
+        (
+            "thread.create",
+            "Create threads",
+            PermissionValueKind::Boolean
+        ),
+        (
+            "thread.edit",
+            "Edit own threads",
+            PermissionValueKind::Boolean
+        ),
+        (
+            "thread.delete",
+            "Delete own threads",
+            PermissionValueKind::Boolean
+        ),
+        (
+            "thread.edit_any",
+            "Edit threads from any user",
+            PermissionValueKind::Boolean
+        ),
+        (
+            "thread.delete_any",
+            "Delete threads from any user",
+            PermissionValueKind::Boolean
+        ),
+        (
+            "thread.move_any",
+            "Move threads",
+            PermissionValueKind::Boolean
+        ),
+        (
+            "thread.approve",
+            "Approve threads",
+            PermissionValueKind::Boolean
+        ),
+        (
+            "thread.delete",
+            "Delete threads",
+            PermissionValueKind::Boolean
+        ),
+        (
+            "thread.subscribe",
+            "Subscribe to threads",
+            PermissionValueKind::Boolean
+        ),
+        (
+            "thread.unsubscribe",
+            "Unsubscribe from threads",
+            PermissionValueKind::Boolean
+        ),
+        (
+            "category.create",
+            "Create categories",
+            PermissionValueKind::Boolean
+        ),
+        (
+            "category.edit",
+            "Edit categories",
+            PermissionValueKind::Boolean
+        ),
+        (
+            "category.delete",
+            "Delete categories",
+            PermissionValueKind::Boolean
+        ),
+        (
+            "forum.create",
+            "Create a forum",
+            PermissionValueKind::Boolean
+        ),
         ("forum.edit", "Edit forums", PermissionValueKind::Boolean),
-        ("forum.delete", "Delete forums", PermissionValueKind::Boolean),
+        (
+            "forum.delete",
+            "Delete forums",
+            PermissionValueKind::Boolean
+        ),
         ("post.create", "Create posts", PermissionValueKind::Boolean),
         ("post.edit", "Edit own post", PermissionValueKind::Boolean),
-        ("post.edit_any", "Edit posts from any user", PermissionValueKind::Boolean),
-        ("post.delete", "Delete own posts", PermissionValueKind::Boolean),
-        ("post.delete_any", "Delete posts from any user", PermissionValueKind::Boolean),
+        (
+            "post.edit_any",
+            "Edit posts from any user",
+            PermissionValueKind::Boolean
+        ),
+        (
+            "post.delete",
+            "Delete own posts",
+            PermissionValueKind::Boolean
+        ),
+        (
+            "post.delete_any",
+            "Delete posts from any user",
+            PermissionValueKind::Boolean
+        ),
     ]);
-}
-}
 }

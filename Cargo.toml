@@ -10,12 +10,12 @@ crate-type = ["cdylib", "rlib"]
 
 
 [dependencies]
-leptos = { path="../leptos/leptos", default-features = false, features = [
+leptos = { git = "https://github.com/leptos-rs/leptos/", branch="main", default-features = false, features = [
   "serde",
 ] }
-leptos_axum = { path = "../leptos/integrations/axum", optional = true }
-leptos_meta = { path = "../leptos/meta", default-features = false }
-leptos_router = { path = "../leptos/router", default-features = false }
+leptos_axum = { git = "https://github.com/leptos-rs/leptos/", branch="main", optional = true }
+leptos_meta = { git = "https://github.com/leptos-rs/leptos/", branch="main", default-features = false }
+leptos_router = { git ="https://github.com/leptos-rs/leptos/", branch="main", default-features = false }
 log = "0.4"
 chrono = {version = "0.4.23", features = ["serde"]}
 cfg-if = "1.0"

@@ -21,12 +21,12 @@ pub fn Navbar(cx: Scope) -> impl IntoView {
 
     let logged_off_view = move |cx: Scope| {
         view! {cx,
-            <A href="/login" class="text-lg font-bold text-text_primary">"Login"</A>
-            <A href="/register" class="text-lg font-bold text-text_primary ml-4">"Register"</A>
+            <A href="/login" class="text-md text-text_primary">"Login"</A>
+            <A href="/register" class="text-md text-text_primary ml-4">"Register"</A>
         }
     };
     view! {cx,
-        <div class="w-full flex justify-center h-9">
+        <div class="w-full flex justify-center h-9 mb-12 bg-bg_darker">
             <div class="w-[1100px] flex items-center h-full">
                 <div class="w-full flex justify-end">
                     {move || {

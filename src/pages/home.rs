@@ -30,10 +30,10 @@ pub fn Home(cx: Scope) -> impl IntoView {
                     </div>
                 }
             }
-            Err(e) => {
+            Err(_) => {
                 view! {cx,
                     <div class="h-full w-full">
-                        <p>{e.to_string()}</p>
+                        ""
                     </div>
                 }
             }
@@ -41,7 +41,13 @@ pub fn Home(cx: Scope) -> impl IntoView {
     };
 
     view! { cx,
-        <Suspense fallback= || ()>{home_view(cx)}</Suspense>
+        <Suspense fallback= move || {
+            view! {cx,
+                <div class="h-full w-full">
+                    ""
+                </div>
+            }
+        }>{home_view(cx)}</Suspense>
     }
 }
 
@@ -50,7 +56,7 @@ fn CategoryCard(cx: Scope, category: HomeCategory) -> impl IntoView {
     let forums = category.forums.clone();
     view! {cx,
         <div class="bg-neutral-800 rounded-lg shadow-lg p-4 mb-3">
-            <h2 class="text-2xl font-bold">{category.title}</h2>
+            <h2 class="text-2xl">{category.title}</h2>
             <p class="text-sm text-text_secondary">{category.description}</p>
             <div class="flex flex-col">
                     <For
@@ -58,7 +64,7 @@ fn CategoryCard(cx: Scope, category: HomeCategory) -> impl IntoView {
                         key=|n| n.id.id.to_raw()
                         view = move |cx, forum| {
                             view! {cx,
-                                <ForumCard forum={forum}/>
+                                <ForumCard class="mt-2" forum={forum}/>
                             }
                         }
                     />
@@ -68,23 +74,29 @@ fn CategoryCard(cx: Scope, category: HomeCategory) -> impl IntoView {
 }
 
 #[component]
-fn ForumCard(cx: Scope, forum: HomeForum) -> impl IntoView {
+fn ForumCard(cx: Scope, forum: HomeForum, #[prop(optional)] class: &'static str) -> impl IntoView {
     let mut forum_path = format!("/forum/{}", forum.get_id());
-
+    let description = forum.description.clone().unwrap_or_default();
+    let title_container_class = if description.is_empty() {
+        "flex items-center"
+    } else {
+        ""
+    };
     view! {cx,
-        <div class="bg-neutral-700 rounded-sm shadow-lg p-4 flex">
-            <div class="w-3/5">
-                <h2 class="text-xl font-bold">
+        <div class=format!("bg-neutral-700 rounded shadow-lg p-4 flex {class}")>
+            <div class=format!("w-3/5 {title_container_class}")>
+                <h2 class="text-lg font-normal">
                     <RouteLink to=forum_path>
                         {forum.title}
                     </RouteLink>
                 </h2>
-                <p class="text-sm text-text_secondary">{forum.description.unwrap_or_default()}</p>
+
+                <p class="text-sm text-text_secondary bg-red-200">{forum.description.unwrap_or_default()}</p>
             </div>
             <div class="flex">
                 <div class="flex flex-col items-center">
                     <p>"Threads"</p>
-                    <p>"1"</p>
+                    <p>{forum.threads_amt}</p>
                 </div>
                 <div class="flex flex-col items-center ml-6">
                     <p>"Messages"</p>
@@ -98,16 +110,16 @@ fn ForumCard(cx: Scope, forum: HomeForum) -> impl IntoView {
 //  use surrealdb, they said
 //  it will be fun, they said
 macro_rules! impl_get_id {
-    ($ty:ty) => {
+    ($ty:ty, $tb: literal) => {
         impl $ty {
             pub fn get_id(&self) -> String {
+                let mut id = self.id.id.to_raw();
                 cfg_if! {
-                    if #[cfg(feature="ssr")] {
-                        self.id.id.to_string()
-                    } else {
-                        self.id.id.to_raw()
+                    if #[cfg(not(feature="ssr"))] {
+                        id = id.replace(&format!("{}:", $tb), "");
                     }
                 }
+                id
             }
         }
     };
@@ -119,10 +131,12 @@ pub struct HomeForum {
     pub title: String,
     pub id: surrealdb::sql::Thing,
     pub description: Option<String>,
+    pub threads_amt: i32,
 }
 
-impl_get_id!(HomeForum);
+impl_get_id!(HomeForum, "forum");
 
+#[macro_export]
 macro_rules! deser_map {
     ($map:ident, $field:ident, $ty:ty) => {
         let $field = $map
@@ -131,6 +145,8 @@ macro_rules! deser_map {
         let $field = serde_json::from_value::<$ty>($field).map_err(serde::de::Error::custom)?;
     };
 }
+
+pub(crate) use deser_map;
 
 //  "Thing" deserialization is fucked up TODO: create a better macro
 impl<'de> Deserialize<'de> for HomeForum {
@@ -141,6 +157,7 @@ impl<'de> Deserialize<'de> for HomeForum {
         let mut map = serde_json::Map::deserialize(deserializer)?;
         deser_map!(map, slug, String);
         deser_map!(map, title, String);
+        deser_map!(map, threads_amt, i32);
         deser_map!(map, description, Option<String>);
 
         let id = map
@@ -157,6 +174,7 @@ impl<'de> Deserialize<'de> for HomeForum {
                     title,
                     slug,
                     description,
+                    threads_amt
                 })
             } else {
                 let id = id.get("id").unwrap().get("String").unwrap();
@@ -169,6 +187,7 @@ impl<'de> Deserialize<'de> for HomeForum {
                     title,
                     slug,
                     description,
+                    threads_amt
                 })
             }
         }
@@ -183,7 +202,7 @@ pub struct HomeCategory {
     pub forums: Vec<HomeForum>,
 }
 
-impl_get_id!(HomeCategory);
+impl_get_id!(HomeCategory, "category");
 
 impl<'de> Deserialize<'de> for HomeCategory {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -231,7 +250,8 @@ pub async fn get_home_data(cx: Scope) -> Result<Vec<HomeCategory>, ServerFnError
     use crate::database::get_db;
     use crate::error::server_error;
     let db = get_db(cx).await?;
-    let result = db.query("SELECT id, title, description, (SELECT title, slug, id, description from forums.*.*) AS forums FROM category")
+    let result = db.query("SELECT id, title, description, 
+                           (SELECT title, slug, id, description, count((SELECT * FROM thread WHERE forum == $parent.id)) as threads_amt from forums.*.*) AS forums FROM category")
         .await
         .map_err(|e| ServerFnError::ServerError(e.to_string()))?
         .take::<Vec<HomeCategory>>(0)

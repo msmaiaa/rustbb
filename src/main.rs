@@ -35,6 +35,7 @@ if #[cfg(feature = "ssr")] {
         use crate::pages::home::GetHomeData;
         use crate::pages::forum::GetForumPageData;
         use crate::pages::create_thread::CreateThread;
+        use crate::components::sidebar::GetSidebarData;
 
         _ = GetHomeData::register();
         _ = RegisterUser::register();
@@ -42,6 +43,7 @@ if #[cfg(feature = "ssr")] {
         _ = GetCurrentUser::register();
         _ = GetForumPageData::register();
         _ = CreateThread::register();
+        _ = GetSidebarData::register();
     }
 
     async fn server_fn_handler(Extension(db): Extension<SurrealClient>, path: Path<String>, headers: HeaderMap, raw_query: RawQuery, request: Request<AxumBody>) -> impl IntoResponse {

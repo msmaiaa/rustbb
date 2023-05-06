@@ -9,11 +9,12 @@ mod global;
 mod hooks;
 mod model;
 mod pages;
-use crate::database::SurrealClient;
+
 use cfg_if::cfg_if;
 
 cfg_if! {
 if #[cfg(feature = "ssr")] {
+    use crate::database::SurrealClient;
     use leptos::*;
     use crate::app::*;
     use std::sync::Arc;

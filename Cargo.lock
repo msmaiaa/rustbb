@@ -1962,6 +1962,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56d80efc4b6721e8be2a10a5df21a30fa0b470f1539e53d8b4e6e75faf938b63"
 
 [[package]]
+name = "papelito"
+version = "0.1.0"
+dependencies = [
+ "cfg-if",
+ "js-sys",
+ "lazy_static",
+ "leptos",
+ "leptos_dom",
+ "leptos_meta",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
 name = "parking"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2413,6 +2427,7 @@ dependencies = [
  "leptos_meta",
  "leptos_router",
  "log",
+ "papelito",
  "rust-argon2",
  "serde",
  "serde_json",

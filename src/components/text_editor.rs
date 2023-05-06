@@ -1,61 +1,26 @@
-use cfg_if::cfg_if;
 use leptos::*;
-
-#[cfg(feature = "hydrate")]
-use wasm_bindgen::prelude::*;
-
-cfg_if! {
-    if #[cfg(feature = "hydrate")] {
-        #[wasm_bindgen(module = "/public/sun_editor.js")]
-        extern "C" {
-            fn get_editor_text(id: String) -> String;
-            fn create_editor(id: String) -> bool;
-        }
-    }
-
-    else if #[cfg(feature = "ssr")] {
-
-        #[allow(dead_code)]
-        fn get_editor_text(_id: String) -> String {
-            "".into()
-        }
-
-        #[allow(dead_code)]
-        fn create_editor(_id: String) -> bool {
-            false
-        }
-    }
-}
+use papelito::{Papelito, PapelitoClasses};
 
 #[component]
-pub fn TextEditor<F>(
+pub fn TextEditor(
     cx: Scope,
-    id: String,
+    key: String,
+    content_signal: RwSignal<String>,
     #[prop(optional)] class: String,
-    on_submit: F,
-) -> impl IntoView
-where
-    F: Fn(String) + 'static,
-{
-    let _id = id.clone();
-    let __id = id.clone();
-    let on_click = move |_| {
-        let id = _id.clone();
-        let editor_value = get_editor_text(id);
-        on_submit(editor_value);
+) -> impl IntoView {
+    let classes = PapelitoClasses {
+        actionbar: "bg-neutral-50 rounded-sm h-[30px] flex justify-center border-b-1 border-neutral-950 text-black".to_string(),
+        button:
+            "bg-transparent border-none cursor-pointer h-[30px] w-[30px] outline-0 align-bottom flex items-center justify-center"
+                .to_string(),
+        content:
+            "h-[480px] p-[10px] w-full text-neutral-950 bg-neutral-700 rounded-sm shadow-lg border border-neutral-800 border-box outline-0 overflow-y-auto border-solid mt-4 focus:outline-none"
+                .to_string(),
+        editor: format!("border-solid {class}"),
+        selected: "bg-neutral-300".to_string(),
     };
 
-    create_effect(cx, move |_| {
-        cfg_if::cfg_if! {
-            if #[cfg(feature = "hydrate")] {
-                create_editor(id.clone());
-            }
-        }
-    });
-
-    //  TODO: listen to the editor's change event and update a local state
     view! {cx,
-        <textarea id=__id class=format!("{class}")/>
-        <button on:click=on_click>"Submit"</button>
+        <Papelito content_signal=content_signal key=key classes=classes/>
     }
 }

@@ -123,11 +123,7 @@ pub fn App(cx: Scope) -> impl IntoView {
         <Link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
         <Script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></Script>
         <Link rel="shortcut icon" type_="image/ico" href="/favicon.ico"/>
-
-        /* sun text editor */
-        <Link fetchpriority="high" href="/vendor/suneditor.min.css" rel="stylesheet"/>
-        <Script fetchpriority="high" src="/vendor/suneditor.min.js"></Script>
-        <Script fetchpriority="high" src="/vendor/suneditor.en.js"></Script>
+        <Link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;500&display=swap" rel="stylesheet"/>
 
         <Title text="rustbb"/>
         <Router>

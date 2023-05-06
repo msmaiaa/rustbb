@@ -6,14 +6,14 @@ pub fn Button<F>(
     #[prop(optional)] _type: &'static str,
     #[prop(optional)] class: &'static str,
     on_click: F,
-    children: Children,
+    #[prop(optional)] children: Option<Children>,
 ) -> impl IntoView
 where
     F: FnMut(MouseEvent) + 'static,
 {
     view! {cx,
         <button on:click=on_click type=_type class=format!("py-1 px-4 rounded {class}")>
-            {children(cx)}
+            {children.map(|c| c(cx))}
         </button>
     }
 }

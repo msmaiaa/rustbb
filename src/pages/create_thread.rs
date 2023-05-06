@@ -1,3 +1,4 @@
+use crate::components::button::Button;
 use crate::components::text_editor::*;
 use crate::pages::forum::ForumPageParams;
 use leptos::*;
@@ -13,21 +14,25 @@ pub struct CreateThreadPayload {
 #[component]
 pub fn CreateThreadPage(cx: Scope) -> impl IntoView {
     let (title, set_title) = create_signal(cx, String::new());
+    let editor_content = create_rw_signal(cx, String::new());
+
     let navigate = use_navigate(cx);
     let try_create_thread = create_action(cx, move |payload: &CreateThreadPayload| {
         let payload = payload.to_owned();
         async move {
-            match create_thread(cx, payload.title, payload.content, payload.forum_id).await {
-                Ok(_) => {}
-                Err(e) => {
-                    log!("error!: {}", e.to_string());
-                }
+            if let Err(e) =
+                create_thread(cx, payload.title, payload.content, payload.forum_id).await
+            {
+                log!("error on create_thread: {}", e.to_string());
             }
+            set_title.update(|t| *t = "".to_string());
+            editor_content.update(|c| *c = "".to_string());
         }
     });
 
-    let on_submit_editor = move |content: String| {
+    let on_submit = move |e: leptos::ev::MouseEvent| {
         let title = title.get();
+        let content = editor_content.get();
         if title.is_empty() || content.is_empty() {
             log!("Title or content is empty.");
             return;
@@ -48,14 +53,16 @@ pub fn CreateThreadPage(cx: Scope) -> impl IntoView {
     };
     view! {cx,
         <div class="w-full">
-            <h2 class="text-2xl mb-3">"Create thread"</h2>
+            <h2 class="text-2xl mb-3 font-light">"New thread"</h2>
             <input
                 on:change = move |ev| {
                     let val = event_target_value(&ev);
                     set_title(val);
                 }
+                prop:value=title
              class="w-full bg-zinc-800 rounded-sm mb-2 h-8 pl-2 pr-8" type="text" placeholder="Title" autocomplete="off"/>
-            <TextEditor on_submit=on_submit_editor class="w-full h-52".to_string() id="create_thread".to_string()/>
+            <TextEditor content_signal=editor_content class="w-full".to_string() key="create_thread".to_string()/>
+            <Button class="text-center rounded bg-green-400 text-black px-4 text-sm mt-2" on_click=on_submit>"Submit"</Button>
         </div>
     }
 }
